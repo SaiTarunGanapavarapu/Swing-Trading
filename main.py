@@ -14,10 +14,10 @@ def buildParser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--universe",
         choices=["nifty50", "nifty200", "banknifty", "allstocks"],
-        default="nifty200",
+        default="nifty50",
         help="Default universe when --symbols/--csv are not provided",
     )
-    parser.add_argument("--export", default="Nifty200Candidates.xlsx", help="Output Excel filename")
+    parser.add_argument("--export", default="Nifty50Candidates.xlsx", help="Output Excel filename")
     parser.add_argument("--top", type=int, default=100, help="Show top N results")
     parser.add_argument("--quiet", action="store_true", help="Minimal output")
     parser.add_argument("--cache-file", dest="cacheFile", default="yfinance_cache.xlsx", help="Excel cache file for fetched market data")
