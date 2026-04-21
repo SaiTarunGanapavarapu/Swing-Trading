@@ -55,12 +55,21 @@ class ScreeningService:
                 if scoredData.get("error"):
                     print(f"❌ {scoredData['error']}")
                 else:
-                    suffix = ""
                     if source == "cache":
-                        suffix = " (cache)"
+                        print(
+                            f"📦 Score: {scoredData['total_score']}/{scoredData.get('score_out_of', 100)} "
+                            f"{scoredData['grade']} | Coverage: {scoredData.get('data_coverage_pct', 0)}% (cache)"
+                        )
                     elif source == "stale-cache":
-                        suffix = " (stale cache)"
-                    print(f"✅ Score: {scoredData.get('totalScore', 0):.1f}/100 {scoredData.get('grade', '')}{suffix}")
+                        print(
+                            f"📦 Score: {scoredData['total_score']}/{scoredData.get('score_out_of', 100)} "
+                            f"{scoredData['grade']} | Coverage: {scoredData.get('data_coverage_pct', 0)}% (stale cache)"
+                        )
+                    else:
+                        print(
+                            f"✅ Score: {scoredData['total_score']}/{scoredData.get('score_out_of', 100)} "
+                            f"{scoredData['grade']} | Coverage: {scoredData.get('data_coverage_pct', 0)}%"
+                        )
 
             time.sleep(1.2)
 
@@ -72,7 +81,11 @@ class ScreeningService:
             return pd.DataFrame()
 
         resultDf = pd.DataFrame(rows)
-        sortKey = "totalScore" if "totalScore" in resultDf.columns else "total_score"
-        if sortKey in resultDf.columns:
-            resultDf = resultDf.sort_values(sortKey, ascending=False).reset_index(drop=True)
+        if "details" in resultDf.columns:
+            resultDf = resultDf.drop(columns=["details"])
+
+        if "total_score" in resultDf.columns:
+            resultDf = resultDf.sort_values("total_score", ascending=False).reset_index(drop=True)
+            resultDf.index = resultDf.index + 1
+            resultDf.index.name = "Rank"
         return resultDf

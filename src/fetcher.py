@@ -1,8 +1,22 @@
 import math
 
+import pandas as pd
 import yfinance as yf
 
 from .indicators import computeFcfMetrics, computeInterestCoverage, computeTechnicals, estimateProfitableYears
+
+
+def isNoneOrNan(value):
+    return value is None or (isinstance(value, float) and math.isnan(value))
+
+
+def toFloatOrNone(value):
+    if isNoneOrNan(value):
+        return None
+    try:
+        return float(value)
+    except Exception:
+        return None
 
 
 def safeGet(d: dict, key: str, default=None):
@@ -10,10 +24,6 @@ def safeGet(d: dict, key: str, default=None):
         value = d.get(key, default)
         return default if value is None else value
     return default
-
-
-def isNoneOrNan(value):
-    return value is None or (isinstance(value, float) and math.isnan(value))
 
 
 def percentOrNone(value):
@@ -28,13 +38,165 @@ def percentOrNone(value):
     return valueFloat
 
 
-def toFloatOrNone(value):
-    if isNoneOrNan(value):
+def _getStatementMetric(frame: pd.DataFrame, candidateRows: list) -> float | None:
+    if frame is None or frame.empty:
+        return None
+    rowLookup = {str(idx).strip().lower(): idx for idx in frame.index}
+    for candidate in candidateRows:
+        key = candidate.strip().lower()
+        if key in rowLookup:
+            row = frame.loc[rowLookup[key]]
+            if isinstance(row, pd.Series):
+                for v in row.tolist():
+                    if pd.notna(v):
+                        try:
+                            return float(v)
+                        except Exception:
+                            continue
+    return None
+
+
+def _getStatementSeries(frame: pd.DataFrame, candidateRows: list) -> list:
+    if frame is None or frame.empty:
+        return []
+    rowLookup = {str(idx).strip().lower(): idx for idx in frame.index}
+    for candidate in candidateRows:
+        key = candidate.strip().lower()
+        if key in rowLookup:
+            row = frame.loc[rowLookup[key]]
+            if isinstance(row, pd.Series):
+                values = []
+                for v in row.tolist():
+                    if pd.notna(v):
+                        try:
+                            values.append(float(v))
+                        except Exception:
+                            continue
+                return values
+    return []
+
+
+def _computeCagr(values: list) -> float | None:
+    if len(values) < 2:
+        return None
+    latest, oldest = values[0], values[-1]
+    periods = len(values) - 1
+    if periods <= 0 or latest <= 0 or oldest <= 0:
         return None
     try:
-        return float(value)
+        return (latest / oldest) ** (1.0 / periods) - 1.0
     except Exception:
         return None
+
+
+def _fillDerivedMetrics(ticker, raw: dict, info: dict) -> None:
+    """Fill missing yfinance info metrics from financial statements."""
+    try:
+        inc = ticker.financials
+    except Exception:
+        inc = pd.DataFrame()
+    try:
+        bs = ticker.balance_sheet
+    except Exception:
+        bs = pd.DataFrame()
+    try:
+        cf = ticker.cashflow
+    except Exception:
+        cf = pd.DataFrame()
+
+    marketCap = raw.get("marketCap") if not isNoneOrNan(raw.get("marketCap")) else None
+    totalDebt = raw.get("totalDebt") if not isNoneOrNan(raw.get("totalDebt")) else None
+    totalCash = raw.get("totalCash") if not isNoneOrNan(raw.get("totalCash")) else None
+    ebitda = raw.get("ebitda") if not isNoneOrNan(raw.get("ebitda")) else None
+    enterpriseValue = info.get("enterpriseValue") if not isNoneOrNan(info.get("enterpriseValue")) else None
+
+    operatingIncome = _getStatementMetric(inc, ["Operating Income", "Operating Income Or Loss"])
+    grossProfit = _getStatementMetric(inc, ["Gross Profit"])
+    totalRevenue = _getStatementMetric(inc, ["Total Revenue", "Operating Revenue", "Revenue"])
+    netIncome = _getStatementMetric(inc, ["Net Income", "Net Income Common Stockholders"])
+    depreciation = _getStatementMetric(cf, ["Depreciation And Amortization", "Depreciation", "Depreciation Amortization Depletion"])
+
+    if totalDebt is None:
+        totalDebt = _getStatementMetric(bs, ["Total Debt", "Total debt", "Long Term Debt", "Long Term Debt And Capital Lease Obligation", "Current Debt", "Current Debt And Capital Lease Obligation"])
+    if totalCash is None:
+        totalCash = _getStatementMetric(bs, ["Cash And Cash Equivalents", "Cash", "Cash Cash Equivalents And Short Term Investments"])
+    if ebitda is None:
+        ebitda = _getStatementMetric(inc, ["EBITDA", "Ebitda"])
+    if ebitda is None and operatingIncome is not None and depreciation is not None:
+        ebitda = float(operatingIncome) + abs(float(depreciation))
+    if ebitda is None and operatingIncome is not None:
+        ebitda = float(operatingIncome)
+
+    if isNoneOrNan(raw.get("grossMargins")) and grossProfit is not None and totalRevenue and totalRevenue > 0:
+        raw["grossMargins"] = float(grossProfit) / float(totalRevenue)
+
+    if isNoneOrNan(raw.get("operatingMargins")) and operatingIncome is not None and totalRevenue and totalRevenue > 0:
+        raw["operatingMargins"] = float(operatingIncome) / float(totalRevenue)
+
+    if isNoneOrNan(raw.get("profitMargins")) and netIncome is not None and totalRevenue and totalRevenue > 0:
+        raw["profitMargins"] = float(netIncome) / float(totalRevenue)
+
+    if isNoneOrNan(raw.get("revenueGrowth")):
+        cagr = _computeCagr(_getStatementSeries(inc, ["Total Revenue", "Operating Revenue", "Revenue"]))
+        if cagr is not None:
+            raw["revenueGrowth"] = cagr
+
+    if isNoneOrNan(raw.get("earningsGrowth")):
+        cagr = _computeCagr(_getStatementSeries(inc, ["Net Income", "Net Income Common Stockholders"]))
+        if cagr is not None:
+            raw["earningsGrowth"] = cagr
+        elif not isNoneOrNan(info.get("earningsQuarterlyGrowth")):
+            raw["earningsGrowth"] = float(info["earningsQuarterlyGrowth"])
+
+    if isNoneOrNan(raw.get("currentRatio")):
+        ca = _getStatementMetric(bs, ["Current Assets", "Total Current Assets"])
+        cl = _getStatementMetric(bs, ["Current Liabilities", "Total Current Liabilities"])
+        if ca and cl and cl > 0:
+            raw["currentRatio"] = float(ca) / float(cl)
+        elif not isNoneOrNan(info.get("quickRatio")):
+            raw["currentRatio"] = float(info["quickRatio"])
+
+    if isNoneOrNan(raw.get("debtToEquity")):
+        equity = _getStatementMetric(bs, ["Stockholders Equity", "Total Stockholder Equity", "Common Stock Equity", "Total Equity Gross Minority Interest"])
+        if totalDebt and equity and equity > 0:
+            raw["debtToEquity"] = float(totalDebt) / float(equity)
+        else:
+            liabilities = _getStatementMetric(bs, ["Total Liabilities Net Minority Interest", "Total Liabilities"])
+            if liabilities and equity and equity > 0:
+                raw["debtToEquity"] = float(liabilities) / float(equity)
+
+    if isNoneOrNan(raw.get("returnOnEquity")):
+        equity = _getStatementMetric(bs, ["Stockholders Equity", "Total Stockholder Equity", "Common Stock Equity", "Total Equity Gross Minority Interest"])
+        if netIncome is not None and equity and equity > 0:
+            raw["returnOnEquity"] = float(netIncome) / float(equity)
+
+    if isNoneOrNan(raw.get("pegRatio")):
+        pe = raw.get("trailingPE")
+        eg = raw.get("earningsGrowth")
+        if not isNoneOrNan(pe) and pe and pe > 0 and not isNoneOrNan(eg) and eg:
+            growthPct = eg * 100.0 if eg <= 1 else eg
+            if growthPct != 0:
+                raw["pegRatio"] = float(pe) / float(growthPct)
+
+    if isNoneOrNan(raw.get("enterpriseToEbitda")):
+        if enterpriseValue and ebitda and ebitda > 0:
+            raw["enterpriseToEbitda"] = float(enterpriseValue) / float(ebitda)
+        elif marketCap and totalDebt is not None and totalCash is not None and ebitda and ebitda > 0:
+            ev = float(marketCap) + float(totalDebt) - float(totalCash)
+            raw["enterpriseToEbitda"] = ev / float(ebitda)
+
+    if isNoneOrNan(raw.get("dividendYield")):
+        price = raw.get("currentPrice") if not isNoneOrNan(raw.get("currentPrice")) else raw.get("regularMarketPrice")
+        rate = info.get("trailingAnnualDividendRate") or info.get("dividendRate")
+        if price and not isNoneOrNan(price) and price > 0 and rate and not isNoneOrNan(rate):
+            raw["dividendYield"] = float(rate) / float(price)
+
+    if totalDebt is not None and isNoneOrNan(raw.get("totalDebt")):
+        raw["totalDebt"] = totalDebt
+    if totalCash is not None and isNoneOrNan(raw.get("totalCash")):
+        raw["totalCash"] = totalCash
+    if ebitda is not None and isNoneOrNan(raw.get("ebitda")):
+        raw["ebitda"] = ebitda
 
 
 def computeDividendYears(ticker) -> int:
@@ -52,62 +214,135 @@ def fetchStockData(symbol: str) -> dict:
     try:
         ticker = yf.Ticker(symbol)
         info = ticker.info if isinstance(ticker.info, dict) else {}
-        hist = ticker.history(period="1y", auto_adjust=False)
 
+        rawInfoKeys = [
+            "marketCap", "grossMargins", "operatingMargins", "profitMargins", "returnOnEquity",
+            "trailingPE", "pegRatio", "priceToBook", "enterpriseToEbitda", "debtToEquity",
+            "currentRatio", "dividendYield", "revenueGrowth", "earningsGrowth", "trailingEps",
+            "bookValue", "totalDebt", "totalCash", "ebitda", "currentPrice", "regularMarketPrice",
+        ]
+        raw = {k: (math.nan if isNoneOrNan(info.get(k)) else info.get(k)) for k in rawInfoKeys}
+
+        _fillDerivedMetrics(ticker, raw, info)
+
+        def getRaw(key, default=0.0):
+            v = raw.get(key, default)
+            return default if isNoneOrNan(v) else v
+
+        if not info.get("regularMarketPrice") and not info.get("currentPrice"):
+            return {"symbol": symbol, "error": "No data available"}
+
+        hist = ticker.history(period="1y")
         technicals = computeTechnicals(hist)
+        technicals = {k: (math.nan if isNoneOrNan(v) else v) for k, v in technicals.items()}
         fcfMetrics = computeFcfMetrics(ticker)
         interestCoverage = computeInterestCoverage(ticker)
         profitableYears = estimateProfitableYears(ticker)
-        dividendYears = computeDividendYears(ticker)
+        # Keep parity with screener.py's rough dividend continuity estimate.
+        dividendYears = 5 if (getRaw("dividendYield", 0.0) or 0.0) > 0 else 0
 
-        currentPrice = toFloatOrNone(safeGet(info, "currentPrice"))
-        if currentPrice is None:
-            currentPrice = toFloatOrNone(safeGet(info, "regularMarketPrice"))
-        if currentPrice is None and hist is not None and not hist.empty:
-            currentPrice = toFloatOrNone(hist["Close"].dropna().iloc[-1])
+        currentPrice = getRaw("currentPrice") or getRaw("regularMarketPrice")
+        if not currentPrice and hist is not None and not hist.empty:
+            currentPrice = toFloatOrNone(hist["Close"].dropna().iloc[-1]) or 0.0
 
-        peRatio = toFloatOrNone(safeGet(info, "trailingPE"))
+        marketCap = getRaw("marketCap", 0.0)
+        marketCapCr = marketCap / 1e7
+
+        grossMargins = getRaw("grossMargins", 0.0)
+        operatingMargins = getRaw("operatingMargins", 0.0)
+        profitMargins = getRaw("profitMargins", 0.0)
+        roe = getRaw("returnOnEquity", 0.0)
+
+        grossMargin = grossMargins * 100 if grossMargins else 0.0
+        operatingMargin = operatingMargins * 100 if operatingMargins else 0.0
+        netMargin = profitMargins * 100 if profitMargins else 0.0
+        roePct = roe * 100 if roe else 0.0
+        rocePct = roePct * 0.85
+
+        revenueGrowth = getRaw("revenueGrowth", 0.0)
+        earningsGrowth = getRaw("earningsGrowth", 0.0)
+        revenueGrowthPct = revenueGrowth * 100 if revenueGrowth else 0.0
+        earningsGrowthPct = earningsGrowth * 100 if earningsGrowth else 0.0
+
+        deRaw = getRaw("debtToEquity", None)
+        if deRaw is not None and deRaw > 5:
+            deRaw = deRaw / 100  # yfinance sometimes returns as %
+
+        peRatio = toFloatOrNone(getRaw("trailingPE", None))
         earningsYield = (100.0 / peRatio) if peRatio and peRatio > 0 else 0.0
 
-        eps = toFloatOrNone(safeGet(info, "trailingEps"))
-        bookValue = toFloatOrNone(safeGet(info, "bookValue"))
+        eps = toFloatOrNone(getRaw("trailingEps", None))
+        bookValue = toFloatOrNone(getRaw("bookValue", None))
         grahamNumber = None
         if eps and bookValue and eps > 0 and bookValue > 0:
             grahamNumber = math.sqrt(22.5 * eps * bookValue)
         grahamNumberRatio = (currentPrice / grahamNumber) if currentPrice and grahamNumber and grahamNumber > 0 else None
 
-        marketCap = toFloatOrNone(safeGet(info, "marketCap", 0.0)) or 0.0
-        marketCapCr = marketCap / 1e7
+        totalDebt = getRaw("totalDebt", 0.0) or 0.0
+        totalCash = getRaw("totalCash", 0.0) or 0.0
+        ebitda = getRaw("ebitda", 0.0) or 0.0
+        netDebt = totalDebt - totalCash
+        netDebtToEbitda = netDebt / ebitda if ebitda > 0 else 999.0
+
+        divYield = getRaw("dividendYield", 0.0)
+        dividendYieldPct = divYield * 100 if divYield else 0.0
+
+        evToEbitda = toFloatOrNone(getRaw("enterpriseToEbitda", None))
 
         return {
             "symbol": symbol,
-            "marketCapCr": marketCapCr,
-            "currentPrice": currentPrice,
-            "grossMargin": percentOrNone(safeGet(info, "grossMargins")) or 0.0,
-            "operatingMargin": percentOrNone(safeGet(info, "operatingMargins")) or 0.0,
-            "netMargin": percentOrNone(safeGet(info, "profitMargins")) or 0.0,
-            "roe": percentOrNone(safeGet(info, "returnOnEquity")) or 0.0,
-            "roce": percentOrNone(safeGet(info, "returnOnAssets")) or 0.0,
-            "epsGrowth5yr": percentOrNone(safeGet(info, "earningsGrowth")) or 0.0,
-            "revenueGrowth3yr": percentOrNone(safeGet(info, "revenueGrowth")) or 0.0,
-            "fcfMargin": toFloatOrNone(fcfMetrics.get("fcfMargin")) or 0.0,
-            "debtToEquity": toFloatOrNone(safeGet(info, "debtToEquity")),
-            "currentRatio": toFloatOrNone(safeGet(info, "currentRatio")) or 0.0,
-            "interestCoverage": toFloatOrNone(interestCoverage) or 0.0,
-            "netDebtToEbitda": toFloatOrNone(safeGet(info, "enterpriseToEbitda")),
-            "fcfPositiveYears": int(toFloatOrNone(fcfMetrics.get("fcfPositiveYears")) or 0),
-            "peRatio": peRatio,
-            "pegRatio": toFloatOrNone(safeGet(info, "pegRatio")),
-            "pbRatio": toFloatOrNone(safeGet(info, "priceToBook")),
-            "evToEbitda": toFloatOrNone(safeGet(info, "enterpriseToEbitda")),
-            "earningsYield": earningsYield,
-            "dividendYield": percentOrNone(safeGet(info, "dividendYield")) or 0.0,
-            "grahamNumber": grahamNumber,
-            "grahamNumberRatio": grahamNumberRatio,
-            "profitableYears": int(profitableYears or 0),
-            "dividendYears": int(dividendYears),
-            "promoterHolding": None,
-            "promoterPledge": None,
+            "name": info.get("longName", symbol),
+            "sector": info.get("sector", ""),
+            "industry": info.get("industry", ""),
+            "market_cap_cr": marketCapCr,
+            "current_price": currentPrice,
+            "gross_margin": grossMargin,
+            "operating_margin": operatingMargin,
+            "net_margin": netMargin,
+            "roe": roePct,
+            "roce": rocePct,
+            "eps_growth_5yr": earningsGrowthPct,
+            "revenue_growth_3yr": revenueGrowthPct,
+            "fcf_margin": toFloatOrNone(fcfMetrics.get("fcfMargin")) or 0.0,
+            "debt_to_equity": deRaw,
+            "current_ratio": getRaw("currentRatio", 0.0),
+            "interest_coverage": toFloatOrNone(interestCoverage) or 0.0,
+            "net_debt_to_ebitda": netDebtToEbitda,
+            "fcf_positive_years": int(toFloatOrNone(fcfMetrics.get("fcfPositiveYears")) or 0),
+            "pe_ratio": peRatio,
+            "peg_ratio": toFloatOrNone(getRaw("pegRatio", None)),
+            "pb_ratio": toFloatOrNone(getRaw("priceToBook", None)),
+            "ev_to_ebitda": evToEbitda,
+            "earnings_yield": earningsYield,
+            "dividend_yield": dividendYieldPct,
+            "graham_number": grahamNumber,
+            "graham_number_ratio": grahamNumberRatio,
+            "profitable_years": int(profitableYears or 0),
+            "dividend_years": int(dividendYears),
+            "promoter_holding": None,
+            "promoter_pledge": None,
+            "error": None,
+            "histRows": int(len(hist)) if hist is not None else 0,
+
+            # External fallback diagnostics are disabled in modular mode for standalone parity.
+            "moneycontrolAttempted": False,
+            "moneycontrolFallbackFailed": False,
+            "moneycontrolFallbackError": "",
+            "moneycontrolFailedFields": "",
+            "moneycontrolFilledFields": "",
+            "moneycontrolFilledCount": 0,
+            "moneycontrolRequestedCount": 0,
+            "moneycontrolRatiosUrl": "",
+            "sourceReturnOnEquity": "yfinance",
+            "sourceCurrentRatio": "yfinance",
+            "sourceEnterpriseToEbitda": "yfinance",
+            "sourceDebtToEquity": "yfinance",
+            "screenerFallbackFailed": False,
+            "screenerFailedFields": "",
+            "screenerFallbackError": "",
+
+            # Preserve raw yfinance keys used by coverage/confidence scoring.
+            **raw,
             **technicals,
         }
     except Exception as exc:

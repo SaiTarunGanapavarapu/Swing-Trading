@@ -6,13 +6,13 @@ import pandas as pd
 def computeTechnicals(hist: pd.DataFrame) -> dict:
     if hist.empty or len(hist) < 50:
         return {
-            "above200Sma": None,
-            "above50Sma": None,
-            "goldenAlignment": None,
-            "rsi14": None,
-            "volumeRatio": None,
-            "pctFrom52wHigh": None,
-            "macdBullish": None,
+            "above_200sma": None,
+            "above_50sma": None,
+            "golden_alignment": None,
+            "rsi_14": None,
+            "volume_ratio": None,
+            "pct_from_52w_high": None,
+            "macd_bullish": None,
         }
 
     close = hist["Close"]
@@ -32,7 +32,7 @@ def computeTechnicals(hist: pd.DataFrame) -> dict:
     volAvg = volume.rolling(20).mean().iloc[-1]
     volRatio = volume.iloc[-1] / volAvg if volAvg > 0 else 1
 
-    high52w = close.max()
+    high52w = hist["High"].dropna().max()
     pctFromHigh = ((high52w - price) / high52w) * 100 if high52w > 0 else 0
 
     ema12 = close.ewm(span=12).mean()
@@ -42,13 +42,13 @@ def computeTechnicals(hist: pd.DataFrame) -> dict:
     macdBull = macd.iloc[-1] > signal.iloc[-1]
 
     return {
-        "above200Sma": price > sma200,
-        "above50Sma": price > sma50,
-        "goldenAlignment": (ema21 > sma50) and (sma50 > sma200) if len(close) >= 200 else False,
-        "rsi14": rsi if not math.isnan(rsi) else 50,
-        "volumeRatio": volRatio,
-        "pctFrom52wHigh": pctFromHigh,
-        "macdBullish": macdBull,
+        "above_200sma": price > sma200,
+        "above_50sma": price > sma50,
+        "golden_alignment": (ema21 > sma50) and (sma50 > sma200) if len(close) >= 200 else False,
+        "rsi_14": rsi if not math.isnan(rsi) else 50,
+        "volume_ratio": volRatio,
+        "pct_from_52w_high": pctFromHigh,
+        "macd_bullish": macdBull,
     }
 
 
