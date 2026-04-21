@@ -27,6 +27,29 @@ symbolsNifty = [
     "TECHM.NS", "TITAN.NS", "TRENT.NS", "ULTRACEMCO.NS", "WIPRO.NS"
 ]
 
+symbolsNifty200 = [
+    "RELIANCE.NS", "HDFCBANK.NS", "BHARTIARTL.NS", "SBIN.NS", "ICICIBANK.NS", "TCS.NS", "BAJFINANCE.NS", "LT.NS", "INFY.NS", "HINDUNILVR.NS",
+    "MARUTI.NS", "AXISBANK.NS", "TITAN.NS", "M&M.NS", "SUNPHARMA.NS", "HCLTECH.NS", "ADANIPOWER.NS", "NTPC.NS", "ITC.NS", "KOTAKBANK.NS",
+    "ADANIPORTS.NS", "ONGC.NS", "ULTRACEMCO.NS", "BEL.NS", "JSWSTEEL.NS", "VEDL.NS", "DMART.NS", "POWERGRID.NS", "BAJAJFINSV.NS", "HAL.NS",
+    "ADANIENT.NS", "BAJAJ-AUTO.NS", "COALINDIA.NS", "TATASTEEL.NS", "HINDZINC.NS", "NESTLEIND.NS", "ETERNAL.NS", "SHRIRAMFIN.NS", "ASIANPAINT.NS", "HINDALCO.NS",
+    "WIPRO.NS", "IOC.NS", "SBILIFE.NS", "EICHERMOT.NS", "ADANIGREEN.NS", "GRASIM.NS", "INDIGO.NS", "TVSMOTOR.NS", "DIVISLAB.NS", "VBL.NS",
+    "PFC.NS", "ABB.NS", "ADANIENSOL.NS", "TRENT.NS", "JIOFIN.NS", "DLF.NS", "TECHM.NS", "BANKBARODA.NS", "UNIONBANK.NS", "CUMMINSIND.NS",
+    "MUTHOOTFIN.NS", "TORNTPHARM.NS", "BSE.NS", "PIDILITIND.NS", "LTIM.NS", "TATAPOWER.NS", "BRITANNIA.NS", "BPCL.NS", "SOLARINDS.NS", "IRFC.NS",
+    "CHOLAFIN.NS", "SIEMENS.NS", "HDFCLIFE.NS", "JINDALSTEL.NS", "TATAMOTORS.NS", "TMPV.NS", "TMCV.NS", "PNB.NS", "MOTHERSON.NS", "CANBK.NS",
+    "CGPOWER.NS", "INDIANB.NS", "POLYCAB.NS", "HDFCAMC.NS", "BAJAJHLDNG.NS", "BHEL.NS", "GODREJCP.NS", "BOSCHLTD.NS", "TATACONSUM.NS", "APOLLOHOSP.NS",
+    "GEVERN.NS", "INDUSTOWER.NS", "LUPIN.NS", "AMBUJACEM.NS", "MAZDOCK.NS", "HEROMOTOCO.NS", "GAIL.NS", "ASHOKLEY.NS", "DRREDDY.NS", "GMRINFRA.NS",
+    "IDEA.NS", "REC.NS", "WAAREE.NS", "CIPLA.NS", "MARICO.NS", "MAXHEALTH.NS", "JSWENERGY.NS", "MCDOWELL-N.NS", "ZYDUSLIFE.NS", "INDHOTEL.NS",
+    "ICICIGI.NS", "SHREECEM.NS", "ABCAPITAL.NS", "BHARATFORG.NS", "MANKIND.NS", "LODHA.NS", "PERSISTENT.NS", "NHPC.NS", "HAVELLS.NS", "HPCL.NS",
+    "AUROPHARMA.NS", "DABUR.NS", "NATIONALUM.NS", "NMDC.NS", "SWIGGY.NS", "OIL.NS", "NYKAA.NS", "POLICYBZR.NS", "AUBANK.NS", "PAYTM.NS",
+    "SRF.NS", "MCX.NS", "LTF.NS", "FEDERALBNK.NS", "SUZLON.NS", "SAIL.NS", "OFSS.NS", "NAUKRI.NS", "ATGL.NS", "DIXON.NS",
+    "ACC.NS", "ASTRAL.NS", "BALKRISIND.NS", "BANDHANBNK.NS", "BANKINDIA.NS", "MAHABANK.NS", "BDL.NS", "BIOCON.NS", "COLPAL.NS", "CONCOR.NS",
+    "DALBHARAT.NS", "DEEPAKNTR.NS", "ESCORTS.NS", "EXIDEIND.NS", "FORTIS.NS", "GLAND.NS", "GLENMARK.NS", "GODREJPROP.NS", "HDFCPRU.NS", "ICICIPRULI.NS",
+    "IDFCFIRSTB.NS", "IRCTC.NS", "IRCON.NS", "JUBLFOOD.NS", "KALYANKJIL.NS", "KPITTECH.NS", "MPHASIS.NS", "MRF.NS", "OBEROIRLTY.NS", "PATANJALI.NS",
+    "PEL.NS", "PETRONET.NS", "PHOENIXLTD.NS", "PIIND.NS", "POONAWALLA.NS", "PRESTIGE.NS", "PVRINOX.NS", "RADICO.NS", "RAILTEL.NS", "RAMCOCEM.NS",
+    "RVNL.NS", "SBICARD.NS", "SCHAEFFLER.NS", "SJVN.NS", "SKFINDIA.NS", "SONACOMS.NS", "STARHEALTH.NS", "SUNTV.NS", "SUPREMEIND.NS", "SYNGENE.NS",
+    "TATACOMM.NS", "TATAELXSI.NS", "TATATECH.NS", "TORNTPOWER.NS", "TRIDENT.NS", "TIINDIA.NS", "UBL.NS", "UNOMINDA.NS", "VOLTAS.NS", "YESBANK.NS"
+]
+
 symbolsBankNifty = [
     "HDFCBANK.NS", "ICICIBANK.NS", "AXISBANK.NS", "KOTAKBANK.NS", "SBIN.NS",
     "INDUSINDBK.NS", "AUBANK.NS", "BANDHANBNK.NS", "FEDERALBNK.NS", "IDFCFIRSTB.NS",
@@ -497,11 +520,13 @@ def getUniverseDataframe(universeName: str = "nifty50") -> pd.DataFrame:
     normalizedUniverse = str(universeName).strip().lower()
     if normalizedUniverse == "nifty50":
         return symbolsToDataframe(symbolsNifty)
+    if normalizedUniverse == "nifty200":
+        return symbolsToDataframe(symbolsNifty200)
     if normalizedUniverse == "banknifty":
         return symbolsToDataframe(symbolsBankNifty)
     if normalizedUniverse == "allstocks":
         return symbolsToDataframe(symbolsAllUniverse)
-    raise ValueError("universe must be one of: nifty50, banknifty, allstocks")
+    raise ValueError("universe must be one of: nifty50, nifty200, banknifty, allstocks")
 
 def loadDefaultSymbols(universeName: str = "nifty50") -> list[str]:
     universeDf = getUniverseDataframe(universeName=universeName)

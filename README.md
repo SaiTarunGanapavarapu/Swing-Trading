@@ -22,6 +22,7 @@ The architecture separates orchestration, data retrieval, scoring logic, and rep
 
 - Supports three built-in universes:
   - `nifty50`
+  - `nifty200`
   - `banknifty`
   - `allstocks` (broad India universe)
 - Also supports custom stock lists via:

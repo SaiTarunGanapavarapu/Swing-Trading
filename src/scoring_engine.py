@@ -5,9 +5,55 @@ def isMissing(value) -> bool:
     return value is None or (isinstance(value, float) and value != value)
 
 
+def normalizeScoringInput(data: dict) -> dict:
+    normalizedData = dict(data)
+    keyMap = {
+        "market_cap_cr": "marketCapCr",
+        "current_price": "currentPrice",
+        "gross_margin": "grossMargin",
+        "operating_margin": "operatingMargin",
+        "net_margin": "netMargin",
+        "eps_growth_5yr": "epsGrowth5yr",
+        "revenue_growth_3yr": "revenueGrowth3yr",
+        "fcf_margin": "fcfMargin",
+        "debt_to_equity": "debtToEquity",
+        "current_ratio": "currentRatio",
+        "interest_coverage": "interestCoverage",
+        "net_debt_to_ebitda": "netDebtToEbitda",
+        "fcf_positive_years": "fcfPositiveYears",
+        "pe_ratio": "peRatio",
+        "peg_ratio": "pegRatio",
+        "pb_ratio": "pbRatio",
+        "ev_to_ebitda": "evToEbitda",
+        "earnings_yield": "earningsYield",
+        "dividend_yield": "dividendYield",
+        "graham_number": "grahamNumber",
+        "graham_number_ratio": "grahamNumberRatio",
+        "profitable_years": "profitableYears",
+        "dividend_years": "dividendYears",
+        "promoter_holding": "promoterHolding",
+        "promoter_pledge": "promoterPledge",
+        "above_200sma": "above200Sma",
+        "above_50sma": "above50Sma",
+        "golden_alignment": "goldenAlignment",
+        "rsi_14": "rsi14",
+        "volume_ratio": "volumeRatio",
+        "pct_from_52w_high": "pctFrom52wHigh",
+        "macd_bullish": "macdBullish",
+    }
+
+    for sourceKey, targetKey in keyMap.items():
+        if targetKey not in normalizedData and sourceKey in normalizedData:
+            normalizedData[targetKey] = normalizedData.get(sourceKey)
+
+    return normalizedData
+
+
 def scoreStock(data: dict) -> dict:
     if data.get("error"):
         return data
+
+    data = normalizeScoringInput(data)
 
     profitabilityScore, _ = profitability.score(data)
     balanceSheetScore, _ = balance_sheet.score(data)
@@ -119,17 +165,31 @@ def scoreStock(data: dict) -> dict:
             "totalScore": totalScore,
             "total_score": totalScore,
             "scoreOutOf": scoreOutOf,
+            "score_out_of": scoreOutOf,
             "dataCoveragePct": dataCoveragePct,
+            "data_coverage_pct": dataCoveragePct,
             "grade": grade,
             "intrinsicScore": intrinsicScore,
             "dataConfidence": dataConfidence,
+            "data_confidence": dataConfidence,
             "finalScore": finalScore,
             "profitabilityScore": round(profitabilityScore, 1),
+            "profitability": round(profitabilityScore, 1),
             "balanceSheetScore": round(balanceSheetScore, 1),
+            "balance_sheet": round(balanceSheetScore, 1),
             "valuationScore": round(valuationScore, 1),
+            "valuation": round(valuationScore, 1),
             "qualityScore": round(qualityScore, 1),
+            "quality": round(qualityScore, 1),
             "technicalScore": round(technicalScore, 1),
+            "technicals": round(technicalScore, 1),
             "flags": " | ".join(flags),
+            "red_flags": " | ".join(flags),
+
+            # Reporting compatibility aliases.
+            "pe": data.get("peRatio"),
+            "de": data.get("debtToEquity"),
+            "rsi": data.get("rsi14"),
         }
     )
     return scoredData
