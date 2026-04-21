@@ -2,53 +2,33 @@ import math
 
 import pandas as pd
 
+from .momentum_indicators import computeExtendedTechnicals
+
 
 def computeTechnicals(hist: pd.DataFrame) -> dict:
-    if hist.empty or len(hist) < 50:
-        return {
-            "above_200sma": None,
-            "above_50sma": None,
-            "golden_alignment": None,
-            "rsi_14": None,
-            "volume_ratio": None,
-            "pct_from_52w_high": None,
-            "macd_bullish": None,
-        }
-
-    close = hist["Close"]
-    volume = hist["Volume"]
-
-    sma200 = close.rolling(200).mean().iloc[-1] if len(close) >= 200 else close.mean()
-    sma50 = close.rolling(50).mean().iloc[-1]
-    ema21 = close.ewm(span=21).mean().iloc[-1]
-    price = close.iloc[-1]
-
-    delta = close.diff()
-    gain = delta.where(delta > 0, 0).rolling(14).mean()
-    loss = (-delta.where(delta < 0, 0)).rolling(14).mean()
-    rs = gain / loss
-    rsi = (100 - (100 / (1 + rs))).iloc[-1]
-
-    volAvg = volume.rolling(20).mean().iloc[-1]
-    volRatio = volume.iloc[-1] / volAvg if volAvg > 0 else 1
-
-    high52w = hist["High"].dropna().max()
-    pctFromHigh = ((high52w - price) / high52w) * 100 if high52w > 0 else 0
-
-    ema12 = close.ewm(span=12).mean()
-    ema26 = close.ewm(span=26).mean()
-    macd = ema12 - ema26
-    signal = macd.ewm(span=9).mean()
-    macdBull = macd.iloc[-1] > signal.iloc[-1]
-
+    """
+    Compute all technical indicators including ATR, ADX, RSI, MACD, and price action.
+    Returns data in snake_case format for compatibility with existing code.
+    """
+    # Use the extended technicals which includes ATR/ADX
+    result = computeExtendedTechnicals(hist)
+    
+    # Convert camelCase keys to snake_case for backward compatibility
     return {
-        "above_200sma": price > sma200,
-        "above_50sma": price > sma50,
-        "golden_alignment": (ema21 > sma50) and (sma50 > sma200) if len(close) >= 200 else False,
-        "rsi_14": rsi if not math.isnan(rsi) else 50,
-        "volume_ratio": volRatio,
-        "pct_from_52w_high": pctFromHigh,
-        "macd_bullish": macdBull,
+        "above_200sma": result.get("above_200sma"),
+        "above_50sma": result.get("above_50sma"),
+        "golden_alignment": result.get("golden_alignment"),
+        "rsi_14": result.get("rsi_14"),
+        "volume_ratio": result.get("volume_ratio"),
+        "pct_from_52w_high": result.get("pct_from_52w_high"),
+        "macd_bullish": result.get("macd_bullish"),
+        # New ATR/ADX fields
+        "atr": result.get("atr"),
+        "adx": result.get("adx"),
+        "plus_di": result.get("plus_di"),
+        "minus_di": result.get("minus_di"),
+        "strong_trend": result.get("strong_trend"),
+        "buy_signal": result.get("buy_signal"),
     }
 
 

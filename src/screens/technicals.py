@@ -60,4 +60,44 @@ def score(data: dict) -> tuple[float, list[RuleResult]]:
     total += pts
     results.append(RuleResult("T6", "Near 52W High", "Technical", pct, pts, 1, grade))
 
+    # ========== ATR/ADX Rules ==========
+    # T7: ADX (Trend Strength)
+    adx = data.get("adx")
+    if adx is None:
+        pts, grade = 0, "no_data"
+    elif adx >= 30:
+        pts, grade = 2, "very_strong"
+    elif adx >= 25:
+        pts, grade = 1.5, "strong"
+    elif adx >= 20:
+        pts, grade = 1, "moderate"
+    elif adx >= 14:
+        pts, grade = 0.5, "weak"
+    else:
+        pts, grade = 0, "very_weak"
+    total += pts
+    results.append(RuleResult("T7", "ADX Trend Strength", "Technical", adx, pts, 2, grade))
+
+    # T8: Direction Signal (Bullish/Bearish confirmation)
+    plus_di = data.get("plus_di")
+    minus_di = data.get("minus_di")
+    if plus_di is None or minus_di is None:
+        pts, grade = 0, "no_data"
+    else:
+        di_diff = plus_di - minus_di
+        if di_diff > 10:
+            pts, grade = 1.5, "strong_bullish"
+        elif di_diff > 5:
+            pts, grade = 1, "moderate_bullish"
+        elif di_diff > 0:
+            pts, grade = 0.5, "weak_bullish"
+        elif di_diff > -5:
+            pts, grade = 0, "neutral"
+        elif di_diff > -10:
+            pts, grade = 0.5, "weak_bearish"
+        else:
+            pts, grade = 0, "strong_bearish"
+    total += pts
+    results.append(RuleResult("T8", "Direction Signal (+DI vs -DI)", "Technical", plus_di, pts, 1.5, grade))
+
     return total, results

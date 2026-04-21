@@ -40,6 +40,12 @@ def normalizeScoringInput(data: dict) -> dict:
         "volume_ratio": "volumeRatio",
         "pct_from_52w_high": "pctFrom52wHigh",
         "macd_bullish": "macdBullish",
+        "atr": "atr",
+        "adx": "adx",
+        "plus_di": "plusDi",
+        "minus_di": "minusDi",
+        "strong_trend": "strongTrend",
+        "buy_signal": "buySignal",
     }
 
     for sourceKey, targetKey in keyMap.items():
