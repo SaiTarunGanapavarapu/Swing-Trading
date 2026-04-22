@@ -6,9 +6,9 @@ def printResults(df: pd.DataFrame):
     if df is None or df.empty:
         return
 
-    print("\n" + "=" * 100)
-    print(f"  SWING TRADE CANDIDATES — {datetime.now().strftime('%Y-%m-%d %H:%M')}")
-    print("=" * 100)
+    # print("\n" + "=" * 100)
+    # print(f"  SWING TRADE CANDIDATES — {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+    # print("=" * 100)
 
     displayCols = [
         "symbol",
@@ -56,7 +56,7 @@ def printResults(df: pd.DataFrame):
             "flags": "Flags",
         }
     )
-    print(displayDf.to_string())
+    # print(displayDf.to_string())
 
     print("\n" + "-" * 60)
     strong = len(df[df["totalScore"] >= 80])
