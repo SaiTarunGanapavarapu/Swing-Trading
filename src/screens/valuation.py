@@ -26,10 +26,8 @@ def score(data: dict) -> tuple[float, list[RuleResult]]:
     pe = data.get("peRatio", 0)
     if pe and pe > 0:
         zscore = data.get("_zscores", {}).get("peRatio_zscore")
-        print("PE Ratio:", pe, "Z-Score:", zscore)
         if zscore is not None:
             # For PE (inverse): lower z-scores are better (z < mean is good)
-            print("z is computed ra howle",zscore)
             pts, grade = scoreTieredZScore(zscore, [(-1.0, 5, "excellent"), (0.0, 3, "good"), (1.0, 1, "fair")], inverse=True)
             display_value = zscore
             display_label = f"P/E Ratio Z-Score"
