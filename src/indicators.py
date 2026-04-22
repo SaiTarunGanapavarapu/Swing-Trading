@@ -75,7 +75,7 @@ def _computeAtrAndAdx(hist: pd.DataFrame, period: int = 14) -> dict:
 
 
 def computeTechnicalIndicators(hist: pd.DataFrame) -> dict:
-    if hist.empty or len(hist) < 50:
+    if hist.empty:
         return {
             "above200Sma": None,
             "above50Sma": None,
@@ -95,6 +95,27 @@ def computeTechnicalIndicators(hist: pd.DataFrame) -> dict:
     histDf = hist.copy()
     if isinstance(histDf.columns, pd.MultiIndex):
         histDf.columns = histDf.columns.droplevel(-1)
+
+    # yfinance can include a trailing in-progress row with missing OHLC values.
+    # Drop incomplete rows so recursive ATR/ADX smoothing does not end on NaN.
+    histDf = histDf.dropna(subset=["Close", "High", "Low"])
+
+    if histDf.empty or len(histDf) < 50:
+        return {
+            "above200Sma": None,
+            "above50Sma": None,
+            "goldenAlignment": None,
+            "rsi14": None,
+            "volumeRatio": None,
+            "pctFrom52wHigh": None,
+            "macdBullish": None,
+            "atr": None,
+            "adx": None,
+            "plusDi": None,
+            "minusDi": None,
+            "strongTrend": False,
+            "buySignal": False,
+        }
 
     close = histDf["Close"]
     volume = histDf["Volume"]
