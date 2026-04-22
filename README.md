@@ -9,7 +9,7 @@ The project is designed for reproducible batch runs with cache-aware data ingest
 This repository implements an end-to-end screening pipeline:
 
 1. Data ingestion: fetches market and financial fields from yfinance.
-2. Feature engineering: computes technicals (SMA, RSI, MACD, volume surge, 52-week distance) and cash-flow proxies.
+2. Feature engineering: computes technical indicators (SMA, RSI, MACD, ATR, ADX, DI spread, volume surge, 52-week distance) and cash-flow proxies.
 3. Multi-pillar scoring: evaluates each stock across profitability, balance-sheet strength, valuation, quality, and technical momentum.
 4. Risk controls: applies explicit red-flag checks and score penalties for critical conditions.
 5. Ranking and export: sorts by final score and exports a full table to Excel.
@@ -76,23 +76,23 @@ Final grades are assigned from total score:
 ```text
 src/
 ├── engine.py              # Main orchestration engine
-├── data_loader.py         # Symbol resolution from args/CSV/default universes
+├── dataLoader.py          # Symbol resolution from args/CSV/default universes
 ├── universe.py            # Built-in universes and normalization helpers
 ├── fetcher.py             # yfinance extraction and raw feature assembly
 ├── indicators.py          # Technical + FCF + profitability history helpers
-├── scoring_engine.py      # Composite score construction and grade mapping
-├── scoring_common.py      # Shared scoring primitives (tiered scoring, rule result)
+├── scoringEngine.py       # Composite score construction and grade mapping
+├── scoringCommon.py       # Shared scoring primitives (tiered scoring, rule result)
 ├── cache.py               # Read/write freshness-aware Excel cache
 ├── reporting.py           # Console table + Excel export helpers
 ├── storage.py             # Persistence wrapper around reporting export
 ├── models.py              # RunOptions dataclass
 └── screens/
     ├── profitability.py   # P1-P8 profitability rule set
-    ├── balance_sheet.py   # B1-B5 leverage/liquidity/cashflow rules
+  ├── balanceSheet.py    # B1-B5 leverage/liquidity/cashflow rules
     ├── valuation.py       # V1-V7 valuation and yield rules
     ├── quality.py         # Q1-Q5 quality/ownership/size rules
     ├── technicals.py      # T1-T6 trend/momentum rules
-    └── red_flags.py       # Critical and warning risk tags
+  └── redFlags.py        # Critical and warning risk tags
 main.py                    # CLI entry point
 requirements.txt           # Runtime dependencies
 ```
@@ -144,7 +144,7 @@ Emphasizes consistency and ownership context:
 - `Q4` Promoter Pledge (can be negative if critically high)
 - `Q5` Market Cap thresholding
 
-## 5) Technical Screen (T1-T6)
+## 5) Technical Screen (T1-T8)
 
 Momentum and trend confirmation:
 
@@ -154,6 +154,8 @@ Momentum and trend confirmation:
 - `T4` RSI zone scoring
 - `T5` Volume Surge (`volumeRatio`)
 - `T6` Distance from 52-week high
+- `T7` ADX trend-strength scoring
+- `T8` Directional confirmation from `+DI` vs `-DI`
 
 ## 6) Red Flags
 
@@ -270,7 +272,7 @@ A full result table is exported to Excel including component sub-scores:
 
 - Modular: data, scoring, and reporting are decoupled.
 - Transparent: rule thresholds and points are explicit in code.
-- Extensible: new screens can be added under `src/screens` and included in `scoring_engine.py`.
+- Extensible: new screens can be added under `src/screens` and included in `scoringEngine.py`.
 - Practical: cache and fallback behavior is built for repeated market scans.
 
 ## Limitations and Notes

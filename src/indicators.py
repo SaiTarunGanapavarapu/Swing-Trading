@@ -1,22 +1,103 @@
-import math
-
 import pandas as pd
 
 
-def computeTechnicals(hist: pd.DataFrame) -> dict:
-    if hist.empty or len(hist) < 50:
+def _computeAtrAndAdx(hist: pd.DataFrame, period: int = 14) -> dict:
+    if hist.empty or len(hist) < period + 1:
         return {
-            "above_200sma": None,
-            "above_50sma": None,
-            "golden_alignment": None,
-            "rsi_14": None,
-            "volume_ratio": None,
-            "pct_from_52w_high": None,
-            "macd_bullish": None,
+            "atr": None,
+            "adx": None,
+            "plusDi": None,
+            "minusDi": None,
+            "strongTrend": False,
+            "buySignal": False,
         }
 
-    close = hist["Close"]
-    volume = hist["Volume"]
+    df = hist.copy()
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = df.columns.droplevel(-1)
+
+    prevClose = df["Close"].shift(1)
+    trueRange = pd.concat(
+        [
+            df["High"] - df["Low"],
+            (df["High"] - prevClose).abs(),
+            (df["Low"] - prevClose).abs(),
+        ],
+        axis=1,
+    ).max(axis=1)
+    atr = trueRange.rolling(window=period).mean()
+
+    upMove = df["High"] - df["High"].shift(1)
+    downMove = df["Low"].shift(1) - df["Low"]
+    plusDm = upMove.where((upMove > downMove) & (upMove > 0), 0.0)
+    minusDm = downMove.where((downMove > upMove) & (downMove > 0), 0.0)
+
+    plusDmSmooth = plusDm.rolling(window=period).mean()
+    minusDmSmooth = minusDm.rolling(window=period).mean()
+
+    # Wilder-style recursive smoothing.
+    for index in range(period, len(df)):
+        atr.iloc[index] = ((atr.iloc[index - 1] * (period - 1)) + trueRange.iloc[index]) / period
+        plusDmSmooth.iloc[index] = ((plusDmSmooth.iloc[index - 1] * (period - 1)) + plusDm.iloc[index]) / period
+        minusDmSmooth.iloc[index] = ((minusDmSmooth.iloc[index - 1] * (period - 1)) + minusDm.iloc[index]) / period
+
+    plusDi = (plusDmSmooth / atr) * 100
+    minusDi = (minusDmSmooth / atr) * 100
+    dx = ((plusDi - minusDi).abs() / (plusDi + minusDi)) * 100
+    adx = dx.rolling(window=period).mean()
+
+    firstAdxIndex = adx.first_valid_index()
+    if firstAdxIndex is not None:
+        firstAdxPosition = df.index.get_loc(firstAdxIndex)
+        for index in range(firstAdxPosition + 1, len(df)):
+            previousAdx = adx.iloc[index - 1]
+            currentDx = dx.iloc[index]
+            if pd.isna(previousAdx) or pd.isna(currentDx):
+                continue
+            adx.iloc[index] = ((previousAdx * (period - 1)) + currentDx) / period
+
+    atrValue = None if pd.isna(atr.iloc[-1]) else float(atr.iloc[-1])
+    adxValue = None if pd.isna(adx.iloc[-1]) else float(adx.iloc[-1])
+    plusDiValue = None if pd.isna(plusDi.iloc[-1]) else float(plusDi.iloc[-1])
+    minusDiValue = None if pd.isna(minusDi.iloc[-1]) else float(minusDi.iloc[-1])
+
+    strongTrend = bool(adxValue and adxValue > 25)
+    buySignal = bool(adxValue and plusDiValue and minusDiValue and adxValue > 25 and plusDiValue > minusDiValue)
+
+    return {
+        "atr": atrValue,
+        "adx": adxValue,
+        "plusDi": plusDiValue,
+        "minusDi": minusDiValue,
+        "strongTrend": strongTrend,
+        "buySignal": buySignal,
+    }
+
+
+def computeTechnicalIndicators(hist: pd.DataFrame) -> dict:
+    if hist.empty or len(hist) < 50:
+        return {
+            "above200Sma": None,
+            "above50Sma": None,
+            "goldenAlignment": None,
+            "rsi14": None,
+            "volumeRatio": None,
+            "pctFrom52wHigh": None,
+            "macdBullish": None,
+            "atr": None,
+            "adx": None,
+            "plusDi": None,
+            "minusDi": None,
+            "strongTrend": False,
+            "buySignal": False,
+        }
+
+    histDf = hist.copy()
+    if isinstance(histDf.columns, pd.MultiIndex):
+        histDf.columns = histDf.columns.droplevel(-1)
+
+    close = histDf["Close"]
+    volume = histDf["Volume"]
 
     sma200 = close.rolling(200).mean().iloc[-1] if len(close) >= 200 else close.mean()
     sma50 = close.rolling(50).mean().iloc[-1]
@@ -28,11 +109,13 @@ def computeTechnicals(hist: pd.DataFrame) -> dict:
     loss = (-delta.where(delta < 0, 0)).rolling(14).mean()
     rs = gain / loss
     rsi = (100 - (100 / (1 + rs))).iloc[-1]
+    if pd.isna(rsi):
+        rsi = 50
 
     volAvg = volume.rolling(20).mean().iloc[-1]
     volRatio = volume.iloc[-1] / volAvg if volAvg > 0 else 1
 
-    high52w = hist["High"].dropna().max()
+    high52w = histDf["High"].dropna().max()
     pctFromHigh = ((high52w - price) / high52w) * 100 if high52w > 0 else 0
 
     ema12 = close.ewm(span=12).mean()
@@ -41,15 +124,28 @@ def computeTechnicals(hist: pd.DataFrame) -> dict:
     signal = macd.ewm(span=9).mean()
     macdBull = macd.iloc[-1] > signal.iloc[-1]
 
+    atrAdxData = _computeAtrAndAdx(histDf, period=14)
+
     return {
-        "above_200sma": price > sma200,
-        "above_50sma": price > sma50,
-        "golden_alignment": (ema21 > sma50) and (sma50 > sma200) if len(close) >= 200 else False,
-        "rsi_14": rsi if not math.isnan(rsi) else 50,
-        "volume_ratio": volRatio,
-        "pct_from_52w_high": pctFromHigh,
-        "macd_bullish": macdBull,
+        "above200Sma": bool(price > sma200),
+        "above50Sma": bool(price > sma50),
+        "goldenAlignment": bool((ema21 > sma50) and (sma50 > sma200)) if len(close) >= 200 else False,
+        "rsi14": float(rsi),
+        "volumeRatio": float(volRatio),
+        "pctFrom52wHigh": float(pctFromHigh),
+        "macdBullish": bool(macdBull),
+        "atr": atrAdxData.get("atr"),
+        "adx": atrAdxData.get("adx"),
+        "plusDi": atrAdxData.get("plusDi"),
+        "minusDi": atrAdxData.get("minusDi"),
+        "strongTrend": atrAdxData.get("strongTrend", False),
+        "buySignal": atrAdxData.get("buySignal", False),
     }
+
+
+def computeTechnicals(hist: pd.DataFrame) -> dict:
+    # Backward-compatible wrapper used by fetcher.
+    return computeTechnicalIndicators(hist)
 
 
 def computeFcfMetrics(ticker) -> dict:

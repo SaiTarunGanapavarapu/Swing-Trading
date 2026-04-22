@@ -1,7 +1,7 @@
-from .data_loader import DataLoader
+from .dataLoader import DataLoader
 from .models import RunOptions
 from .reporting import printResults
-from .screening_service import ScreeningService
+from .screeningService import ScreeningService
 from .storage import ResultStorage
 
 

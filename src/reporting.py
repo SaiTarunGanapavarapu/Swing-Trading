@@ -12,58 +12,58 @@ def printResults(df: pd.DataFrame):
 
     displayCols = [
         "symbol",
-        "total_score",
-        "score_out_of",
-        "data_coverage_pct",
+        "totalScore",
+        "scoreOutOf",
+        "dataCoveragePct",
         "grade",
         "intrinsicScore",
         "dataConfidence",
         "finalScore",
         "profitability",
-        "balance_sheet",
+        "balanceSheetScore",
         "valuation",
         "quality",
         "technicals",
-        "market_cap_cr",
-        "pe",
+        "marketCapCr",
+        "peRatio",
         "roe",
-        "de",
-        "rsi",
-        "red_flags",
+        "debtToEquity",
+        "rsi14",
+        "flags",
     ]
     availableCols = [col for col in displayCols if col in df.columns]
     displayDf = df[availableCols].copy()
     displayDf = displayDf.rename(
         columns={
             "symbol": "Symbol",
-            "total_score": "Score",
-            "score_out_of": "OutOf",
-            "data_coverage_pct": "Coverage%",
+            "totalScore": "Score",
+            "scoreOutOf": "OutOf",
+            "dataCoveragePct": "Coverage%",
             "grade": "Grade",
             "intrinsicScore": "Intrinsic",
             "dataConfidence": "Confidence%",
             "finalScore": "Final",
             "profitability": "Prof/30",
-            "balance_sheet": "BS/20",
+            "balanceSheetScore": "BS/20",
             "valuation": "Val/25",
             "quality": "Qual/15",
             "technicals": "Tech/10",
-            "market_cap_cr": "MCapCr",
-            "pe": "PE",
+            "marketCapCr": "MCapCr",
+            "peRatio": "PE",
             "roe": "ROE",
-            "de": "D/E",
-            "rsi": "RSI",
-            "red_flags": "Flags",
+            "debtToEquity": "D/E",
+            "rsi14": "RSI",
+            "flags": "Flags",
         }
     )
     print(displayDf.to_string())
 
     print("\n" + "-" * 60)
-    strong = len(df[df["total_score"] >= 80])
-    buy = len(df[(df["total_score"] >= 70) & (df["total_score"] < 80)])
-    watch = len(df[(df["total_score"] >= 60) & (df["total_score"] < 70)])
+    strong = len(df[df["totalScore"] >= 80])
+    buy = len(df[(df["totalScore"] >= 70) & (df["totalScore"] < 80)])
+    watch = len(df[(df["totalScore"] >= 60) & (df["totalScore"] < 70)])
     print(f"  🟢 Strong Buy: {strong}  |  🟢 Buy: {buy}  |  🟡 Watchlist: {watch}")
-    print(f"  Total screened: {len(df)}  |  Avg score: {df['total_score'].mean():.1f}")
+    print(f"  Total screened: {len(df)}  |  Avg score: {df['totalScore'].mean():.1f}")
     print("-" * 60)
 
 
@@ -75,13 +75,45 @@ def exportToExcel(df: pd.DataFrame, filename: str = "swingCandidates.xlsx"):
         from openpyxl.styles import PatternFill
 
         with pd.ExcelWriter(filename, engine="openpyxl") as writer:
-            exportDf = df.drop(columns=["details"], errors="ignore")
+            exportCols = [
+                "symbol",
+                "name",
+                "sector",
+                "industry",
+                "totalScore",
+                "scoreOutOf",
+                "dataCoveragePct",
+                "grade",
+                "intrinsicScore",
+                "dataConfidence",
+                "finalScore",
+                "profitabilityScore",
+                "balanceSheetScore",
+                "valuationScore",
+                "qualityScore",
+                "technicalScore",
+                "marketCapCr",
+                "currentPrice",
+                "peRatio",
+                "roe",
+                "debtToEquity",
+                "rsi14",
+                "atr",
+                "adx",
+                "plusDi",
+                "minusDi",
+                "strongTrend",
+                "buySignal",
+                "flags",
+            ]
+            availableExportCols = [column for column in exportCols if column in df.columns]
+            exportDf = df[availableExportCols].copy()
             exportDf.to_excel(writer, sheet_name="Rankings", index=True)
 
             worksheet = writer.sheets["Rankings"]
             scoreColumn = None
             for colIndex, columnName in enumerate(exportDf.columns, start=2):
-                if columnName == "total_score":
+                if columnName == "totalScore":
                     scoreColumn = colIndex
                     break
 
