@@ -88,7 +88,7 @@ src/
 ├── models.py              # RunOptions dataclass
 └── screens/
     ├── profitability.py   # P1-P8 profitability rule set
-  ├── balanceSheet.py    # B1-B5 leverage/liquidity/cashflow rules
+    ├── balanceSheet.py    # B1-B5 leverage/liquidity/cashflow rules
     ├── valuation.py       # V1-V7 valuation and yield rules
     ├── quality.py         # Q1-Q5 quality/ownership/size rules
     ├── technicals.py      # T1-T6 trend/momentum rules
@@ -288,7 +288,6 @@ A full result table is exported to Excel including component sub-scores:
 Potential next upgrades:
 
 - Add NSE/BSE direct fundamental enrichers for promoter/pledge accuracy.
-- Expand technical suite (ATR, ADX, relative strength vs benchmark).
 - Add sector-relative normalization and z-score based ranking.
 - Add configurable rule weights from a YAML/JSON config.
 - Add test coverage for each scoring module and edge-case data scenarios.
