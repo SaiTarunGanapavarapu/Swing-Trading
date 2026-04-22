@@ -9,7 +9,7 @@ The project is designed for reproducible batch runs with cache-aware data ingest
 This repository implements an end-to-end screening pipeline:
 
 1. Data ingestion: fetches market and financial fields from yfinance.
-2. Feature engineering: computes technicals (SMA, RSI, MACD, volume surge, 52-week distance) and cash-flow proxies.
+2. Feature engineering: computes technical indicators (SMA, RSI, MACD, ATR, ADX, DI spread, volume surge, 52-week distance) and cash-flow proxies.
 3. Multi-pillar scoring: evaluates each stock across profitability, balance-sheet strength, valuation, quality, and technical momentum.
 4. Risk controls: applies explicit red-flag checks and score penalties for critical conditions.
 5. Ranking and export: sorts by final score and exports a full table to Excel.
@@ -144,7 +144,7 @@ Emphasizes consistency and ownership context:
 - `Q4` Promoter Pledge (can be negative if critically high)
 - `Q5` Market Cap thresholding
 
-## 5) Technical Screen (T1-T6)
+## 5) Technical Screen (T1-T8)
 
 Momentum and trend confirmation:
 
@@ -154,6 +154,8 @@ Momentum and trend confirmation:
 - `T4` RSI zone scoring
 - `T5` Volume Surge (`volumeRatio`)
 - `T6` Distance from 52-week high
+- `T7` ADX trend-strength scoring
+- `T8` Directional confirmation from `+DI` vs `-DI`
 
 ## 6) Red Flags
 

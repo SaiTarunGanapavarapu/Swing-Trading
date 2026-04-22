@@ -6,7 +6,7 @@ import pandas as pd
 from .cache import isCacheFresh, loadDataCache, saveDataCache, stripCacheMeta
 from .fetcher import fetchStockData
 from .models import RunOptions
-from .scoring_engine import scoreStock
+from .scoringEngine import scoreStock
 
 
 class ScreeningService:
@@ -57,18 +57,18 @@ class ScreeningService:
                 else:
                     if source == "cache":
                         print(
-                            f"📦 Score: {scoredData['total_score']}/{scoredData.get('score_out_of', 100)} "
-                            f"{scoredData['grade']} | Coverage: {scoredData.get('data_coverage_pct', 0)}% (cache)"
+                            f"📦 Score: {scoredData['totalScore']}/{scoredData.get('scoreOutOf', 100)} "
+                            f"{scoredData['grade']} | Coverage: {scoredData.get('dataCoveragePct', 0)}% (cache)"
                         )
                     elif source == "stale-cache":
                         print(
-                            f"📦 Score: {scoredData['total_score']}/{scoredData.get('score_out_of', 100)} "
-                            f"{scoredData['grade']} | Coverage: {scoredData.get('data_coverage_pct', 0)}% (stale cache)"
+                            f"📦 Score: {scoredData['totalScore']}/{scoredData.get('scoreOutOf', 100)} "
+                            f"{scoredData['grade']} | Coverage: {scoredData.get('dataCoveragePct', 0)}% (stale cache)"
                         )
                     else:
                         print(
-                            f"✅ Score: {scoredData['total_score']}/{scoredData.get('score_out_of', 100)} "
-                            f"{scoredData['grade']} | Coverage: {scoredData.get('data_coverage_pct', 0)}%"
+                            f"✅ Score: {scoredData['totalScore']}/{scoredData.get('scoreOutOf', 100)} "
+                            f"{scoredData['grade']} | Coverage: {scoredData.get('dataCoveragePct', 0)}%"
                         )
 
             time.sleep(1.2)
@@ -84,8 +84,8 @@ class ScreeningService:
         if "details" in resultDf.columns:
             resultDf = resultDf.drop(columns=["details"])
 
-        if "total_score" in resultDf.columns:
-            resultDf = resultDf.sort_values("total_score", ascending=False).reset_index(drop=True)
+        if "totalScore" in resultDf.columns:
+            resultDf = resultDf.sort_values("totalScore", ascending=False).reset_index(drop=True)
             resultDf.index = resultDf.index + 1
             resultDf.index.name = "Rank"
         return resultDf

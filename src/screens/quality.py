@@ -1,4 +1,4 @@
-from ..scoring_common import RuleResult, scoreTiered
+from ..scoringCommon import RuleResult, scoreTiered
 
 
 def score(data: dict) -> tuple[float, list[RuleResult]]:
