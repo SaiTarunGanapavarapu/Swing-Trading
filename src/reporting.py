@@ -6,9 +6,9 @@ def printResults(df: pd.DataFrame):
     if df is None or df.empty:
         return
 
-    print("\n" + "=" * 100)
-    print(f"  SWING TRADE CANDIDATES — {datetime.now().strftime('%Y-%m-%d %H:%M')}")
-    print("=" * 100)
+    # print("\n" + "=" * 100)
+    # print(f"  SWING TRADE CANDIDATES — {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+    # print("=" * 100)
 
     displayCols = [
         "symbol",
@@ -56,7 +56,7 @@ def printResults(df: pd.DataFrame):
             "flags": "Flags",
         }
     )
-    print(displayDf.to_string())
+    # print(displayDf.to_string())
 
     print("\n" + "-" * 60)
     strong = len(df[df["totalScore"] >= 80])
@@ -92,11 +92,29 @@ def exportToExcel(df: pd.DataFrame, filename: str = "swingCandidates.xlsx"):
                 "valuationScore",
                 "qualityScore",
                 "technicalScore",
+                "peRatio",
+                "peRatio_zscore",
+                "pegRatio",
+                "pegRatio_zscore",
+                "pbRatio",
+                "pbRatio_zscore",
+                "evToEbitda",
+                "evToEbitda_zscore",
+                "debtToEquity",
+                "debtToEquity_zscore",
+                "netDebtToEbitda",
+                "netDebtToEbitda_zscore",
+                "currentRatio",
+                "currentRatio_zscore",
+                "epsGrowth5yr",
+                "epsGrowth5yr_zscore",
+                "revenueGrowth3yr",
+                "revenueGrowth3yr_zscore",
+                "fcfMargin",
+                "fcfMargin_zscore",
                 "marketCapCr",
                 "currentPrice",
-                "peRatio",
                 "roe",
-                "debtToEquity",
                 "rsi14",
                 "atr",
                 "adx",
@@ -134,6 +152,19 @@ def exportToExcel(df: pd.DataFrame, filename: str = "swingCandidates.xlsx"):
                             cell.fill = PatternFill("solid", fgColor="FF1744")
                     except Exception:
                         pass
+
+            # Highlight z-score columns in light blue for easy scanning
+            zscoreCols = [col for col in availableExportCols if "_zscore" in col]
+            zscoreColIndices = []
+            for colIndex, columnName in enumerate(exportDf.columns, start=2):
+                if columnName in zscoreCols:
+                    zscoreColIndices.append(colIndex)
+            
+            if zscoreColIndices:
+                zscoreHighlight = PatternFill("solid", fgColor="CCDDEE")  # Light blue
+                for rowIndex in range(2, len(exportDf) + 2):
+                    for colIndex in zscoreColIndices:
+                        worksheet.cell(row=rowIndex, column=colIndex).fill = zscoreHighlight
 
             for column in worksheet.columns:
                 maxLen = max(len(str(cell.value or "")) for cell in column)
