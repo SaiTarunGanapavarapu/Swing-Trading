@@ -259,10 +259,10 @@ def fetchStockData(symbol: str) -> dict:
         roePct = roe * 100 if roe else 0.0
         rocePct = roePct * 0.85
 
-        revenueGrowth = getRaw("revenueGrowth", 0.0)
-        earningsGrowth = getRaw("earningsGrowth", 0.0)
-        revenueGrowthPct = revenueGrowth * 100 if revenueGrowth else 0.0
-        earningsGrowthPct = earningsGrowth * 100 if earningsGrowth else 0.0
+        revenueGrowth = toFloatOrNone(getRaw("revenueGrowth", None))
+        earningsGrowth = toFloatOrNone(getRaw("earningsGrowth", None))
+        revenueGrowthPct = revenueGrowth * 100 if revenueGrowth is not None else None
+        earningsGrowthPct = earningsGrowth * 100 if earningsGrowth is not None else None
 
         deRaw = getRaw("debtToEquity", None)
         if deRaw is not None and deRaw > 5:
@@ -282,7 +282,7 @@ def fetchStockData(symbol: str) -> dict:
         totalCash = getRaw("totalCash", 0.0) or 0.0
         ebitda = getRaw("ebitda", 0.0) or 0.0
         netDebt = totalDebt - totalCash
-        netDebtToEbitda = netDebt / ebitda if ebitda > 0 else 999.0
+        netDebtToEbitda = netDebt / ebitda if ebitda > 0 else None
 
         divYield = getRaw("dividendYield", 0.0)
         dividendYieldPct = divYield * 100 if divYield else 0.0
@@ -305,7 +305,7 @@ def fetchStockData(symbol: str) -> dict:
             "revenueGrowth3yr": revenueGrowthPct,
             "fcfMargin": toFloatOrNone(fcfMetrics.get("fcfMargin")) or 0.0,
             "debtToEquity": deRaw,
-            "currentRatio": getRaw("currentRatio", 0.0),
+            "currentRatio": toFloatOrNone(getRaw("currentRatio", None)),
             "interestCoverage": toFloatOrNone(interestCoverage) or 0.0,
             "netDebtToEbitda": netDebtToEbitda,
             "fcfPositiveYears": int(toFloatOrNone(fcfMetrics.get("fcfPositiveYears")) or 0),

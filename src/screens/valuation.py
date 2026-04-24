@@ -22,25 +22,33 @@ def score(data: dict) -> tuple[float, list[RuleResult]]:
     results = []
     total = 0
 
-    # P/E Ratio - Z-score tiers: < -1.0 (excellent), -1.0 to 0 (good), 0 to 1.0 (fair), > 1.0 (poor)
-    pe = data.get("peRatio", 0)
-    if pe and pe > 0:
-        zscore = data.get("_zscores", {}).get("peRatio_zscore")
-        if zscore is not None:
-            # For PE (inverse): lower z-scores are better (z < mean is good)
-            pts, grade = scoreTieredZScore(zscore, [(-1.0, 5, "excellent"), (0.0, 3, "good"), (1.0, 1, "fair")], inverse=True)
-            display_value = zscore
-            display_label = f"P/E Ratio Z-Score"
+    # === HARD GUARDRAILS ===
+    # Loss-making companies get hard caps regardless of z-score
+    pe = data.get("peRatio")
+    if pe is not None and pe < 0:
+        # Hard fail: loss-making
+        pts, grade = 0, "LOSS_MAKING"
+        results.append(RuleResult("V1", "P/E Ratio", "Graham", pe, pts, 5, grade))
+        total += pts
+    else:
+        # P/E Ratio - Z-score tiers: < -1.0 (excellent), -1.0 to 0 (good), 0 to 1.0 (fair), > 1.0 (poor)
+        if pe and pe > 0:
+            zscore = data.get("_zscores", {}).get("peRatio_zscore")
+            if zscore is not None:
+                # For PE (inverse): lower z-scores are better (z < mean is good)
+                pts, grade = scoreTieredZScore(zscore, [(-1.0, 5, "excellent"), (0.0, 3, "good"), (1.0, 1, "fair")], inverse=True)
+                display_value = zscore
+                display_label = f"P/E Ratio Z-Score"
+            else:
+                pts, grade = scoreTiered(pe, [(12, 5, "excellent"), (20, 3, "good"), (30, 1, "fair")], inverse=True)
+                display_value = pe
+                display_label = "P/E Ratio"
         else:
-            pts, grade = scoreTiered(pe, [(12, 5, "excellent"), (20, 3, "good"), (30, 1, "fair")], inverse=True)
+            pts, grade = 0, "N/A"
             display_value = pe
             display_label = "P/E Ratio"
-    else:
-        pts, grade = 0, "loss-making"
-        display_value = pe
-        display_label = "P/E Ratio"
-    total += pts
-    results.append(RuleResult("V1", display_label, "Graham", display_value, pts, 5, grade))
+        total += pts
+        results.append(RuleResult("V1", display_label, "Graham", display_value, pts, 5, grade))
 
     # PEG Ratio - Z-score tiers
     peg = data.get("pegRatio", 0)

@@ -165,6 +165,13 @@ def scoreStock(data: dict) -> dict:
     scoreOutOf = round(100.0 * (dataCoveragePct / 100.0), 1)
     finalScore = round(intrinsicScore * (0.5 + 0.5 * (dataConfidence / 100.0)), 1)
 
+    # Flatten z-scores from _zscores dict into individual columns for reporting
+    zScoresFlat = {}
+    zscoresDict = data.get("_zscores", {})
+    for metricKey, zscoreValue in zscoresDict.items():
+        if zscoreValue is not None:
+            zScoresFlat[metricKey] = round(zscoreValue, 2)
+
     scoredData = dict(data)
     scoredData.update(
         {
@@ -198,4 +205,5 @@ def scoreStock(data: dict) -> dict:
             "rsi": data.get("rsi14"),
         }
     )
+    scoredData.update(zScoresFlat)
     return scoredData

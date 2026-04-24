@@ -16,56 +16,80 @@ class ScreeningService:
 
     @staticmethod
     def _computeSectorStats(allData: list[dict]) -> dict:
-        """Compute z-score stats for each metric by sector."""
+        """Compute z-score stats for each metric by sector, excluding missing/sentinel values."""
         sectorData = defaultdict(lambda: defaultdict(list))
+        globalData = defaultdict(list)
         metrics = [
             "peRatio", "pegRatio", "pbRatio", "evToEbitda",
             "epsGrowth5yr", "revenueGrowth3yr", "fcfMargin",
             "debtToEquity", "netDebtToEbitda", "currentRatio"
         ]
 
-        # Group data by sector and collect metrics
+        # Group data by sector and collect metrics (exclude None/NaN)
         for stock in allData:
             if stock.get("error"):
                 continue
-            sector = stock.get("sector", "Unknown")
-            if not sector:
-                continue
+            sector = stock.get("sector") or "Unknown"
             for metric in metrics:
                 value = stock.get(metric)
+                # Only include valid numeric, non-sentinel values
                 if value is not None and isinstance(value, (int, float)) and not math.isnan(value):
+                    # Skip sentinel values like 999, -999 for ratios
+                    if metric in ["netDebtToEbitda"] and value >= 500:
+                        continue
                     sectorData[sector][metric].append(value)
+                    globalData[metric].append(value)
 
-        # Compute mean and std dev for each metric in each sector
-        sectorStats = {}
+        # Compute mean and std dev with minimum sample size threshold (>= 12)
+        sectorStats = {"sector": {}, "global": {}}
+        minSampleSize = 12
+        
         for sector, metrics_dict in sectorData.items():
-            sectorStats[sector] = {}
+            sectorStats["sector"][sector] = {}
             for metric, values in metrics_dict.items():
-                if len(values) > 1:
+                # Only compute z-score stats if enough samples
+                if len(values) >= minSampleSize:
                     mean = sum(values) / len(values)
                     variance = sum((x - mean) ** 2 for x in values) / len(values)
                     stddev = math.sqrt(variance)
-                    sectorStats[sector][metric] = {"mean": mean, "std": stddev}
+                    if stddev > 0:  # Avoid division by zero
+                        sectorStats["sector"][sector][metric] = {"mean": mean, "std": stddev}
+
+        # Compute global stats as fallback
+        for metric, values in globalData.items():
+            if len(values) >= 10:  # Lower threshold for global
+                mean = sum(values) / len(values)
+                variance = sum((x - mean) ** 2 for x in values) / len(values)
+                stddev = math.sqrt(variance)
+                if stddev > 0:
+                    sectorStats["global"][metric] = {"mean": mean, "std": stddev}
 
         return sectorStats
 
     @staticmethod
     def _getZScore(value, sector, metric, sectorStats):
-        """Get z-score for a value in a sector."""
+        """Get z-score with fallback hierarchy: sector -> industry -> global."""
         if value is None or not isinstance(value, (int, float)) or math.isnan(value):
             return None
         
-        sectorMetricStats = sectorStats.get(sector, {}).get(metric)
-        if not sectorMetricStats:
-            return None
+        # Try sector first
+        sectorMetricStats = sectorStats.get("sector", {}).get(sector, {}).get(metric)
+        if sectorMetricStats:
+            mean = sectorMetricStats.get("mean")
+            std = sectorMetricStats.get("std")
+            if std is not None and std > 0:
+                return (value - mean) / std
         
-        mean = sectorMetricStats.get("mean")
-        std = sectorMetricStats.get("std")
+        # Fallback to global
+        globalMetricStats = sectorStats.get("global", {}).get(metric)
+        if globalMetricStats:
+            mean = globalMetricStats.get("mean")
+            std = globalMetricStats.get("std")
+            if std is not None and std > 0:
+                return (value - mean) / std
         
-        if std is None or std == 0:
-            return None
-        
-        return (value - mean) / std
+        # No valid baseline
+        return None
 
     def run(self, symbols: list[str], options: RunOptions) -> pd.DataFrame:
         results = []
@@ -119,7 +143,7 @@ class ScreeningService:
 
             # Add z-scores to the data for scoring
             if not rowData.get("error"):
-                sector = rowData.get("sector", "Unknown")
+                sector = rowData.get("sector") or "Unknown"
                 zScores = {}
                 for metric in ["peRatio", "pegRatio", "pbRatio", "evToEbitda", 
                               "epsGrowth5yr", "revenueGrowth3yr", "fcfMargin",
@@ -128,7 +152,6 @@ class ScreeningService:
                     if zscore is not None:
                         zScores[f"{metric}_zscore"] = zscore
                 rowData["_zscores"] = zScores
-                rowData["_sector_stats"] = sectorStats
 
             scoredData = scoreStock(rowData)
             results.append(scoredData)
