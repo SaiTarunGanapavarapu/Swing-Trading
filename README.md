@@ -127,6 +127,7 @@ The terminal shows the ranked shortlist with the main fields:
 - Flags
 
 The Excel export includes the full score breakdown and the raw/derived metrics used by the screener.
+Each run also creates a timestamped JSON file containing the same ranked rows and all per-stock fields/sub-scores.
 
 ## Notes
 
