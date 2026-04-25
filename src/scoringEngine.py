@@ -5,6 +5,12 @@ def isMissing(value) -> bool:
     return value is None or (isinstance(value, float) and value != value)
 
 
+def normalizeScore(rawScore: float, rawMaxScore: float, targetMaxScore: float) -> float:
+    if rawMaxScore <= 0:
+        return 0.0
+    return round((rawScore / rawMaxScore) * targetMaxScore, 1)
+
+
 def normalizeScoringInput(data: dict) -> dict:
     normalizedData = dict(data)
     keyMap = {
@@ -67,6 +73,13 @@ def scoreStock(data: dict) -> dict:
     qualityScore, _ = quality.score(data)
     technicalScore, _ = technicals.score(data)
     flags = redFlags.detect(data)
+
+    # Keep the public section scores normalized to the original 100-point layout.
+    profitabilityScore = normalizeScore(profitabilityScore, 16.0, 30.0)
+    balanceSheetScore = normalizeScore(balanceSheetScore, 15.0, 20.0)
+    valuationScore = normalizeScore(valuationScore, 17.0, 25.0)
+    qualityScore = normalizeScore(qualityScore, 15.0, 15.0)
+    technicalScore = normalizeScore(technicalScore, 11.0, 10.0)
 
     totalRawScore = profitabilityScore + balanceSheetScore + valuationScore + qualityScore + technicalScore
     penalty = 2.0 * sum(1 for flag in flags if "🚨" in flag)

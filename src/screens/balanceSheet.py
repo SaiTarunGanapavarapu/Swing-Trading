@@ -9,27 +9,32 @@ def score(data: dict) -> tuple[float, list[RuleResult]]:
     # These are hard caps/fails, not soft z-score tiers.
     
     de = data.get("debtToEquity")
+    # B1 scoring disabled. Keep the original logic commented out for reference.
+    # if de is not None and de > 2.0:
+    #     # Hard fail: excessive debt
+    #     pts, grade = 0, "CRITICAL_DEBT"
+    #     results.append(RuleResult("B1", "Debt/Equity", "Buffett/Graham", de, pts, 5, grade))
+    #     total += pts
+    # else:
+    #     # Try z-score for D/E ratio
+    #     zscore = data.get("_zscores", {}).get("debtToEquity_zscore")
+    #     if zscore is not None:
+    #         # For D/E (inverse): lower z-scores are better
+    #         pts, grade = scoreTieredZScore(zscore, [(-1.0, 5, "excellent"), (-0.5, 4, "good"), (0.5, 2, "fair")], inverse=True)
+    #         display_value = zscore
+    #         display_name = "D/E Ratio Z-Score"
+    #     else:
+    #         de_val = de if de is not None else 999
+    #         pts, grade = scoreTiered(de_val, [(0.1, 5, "excellent"), (0.5, 4, "good"), (1.0, 2, "fair")], inverse=True)
+    #         display_value = de_val
+    #         display_name = "Debt/Equity"
+    #     
+    #     total += pts
+    #     results.append(RuleResult("B1", display_name, "Buffett/Graham", display_value, pts, 5, grade))
+
     if de is not None and de > 2.0:
-        # Hard fail: excessive debt
         pts, grade = 0, "CRITICAL_DEBT"
-        results.append(RuleResult("B1", "Debt/Equity", "Buffett/Graham", de, pts, 5, grade))
-        total += pts
-    else:
-        # Try z-score for D/E ratio
-        zscore = data.get("_zscores", {}).get("debtToEquity_zscore")
-        if zscore is not None:
-            # For D/E (inverse): lower z-scores are better
-            pts, grade = scoreTieredZScore(zscore, [(-1.0, 5, "excellent"), (-0.5, 4, "good"), (0.5, 2, "fair")], inverse=True)
-            display_value = zscore
-            display_name = "D/E Ratio Z-Score"
-        else:
-            de_val = de if de is not None else 999
-            pts, grade = scoreTiered(de_val, [(0.1, 5, "excellent"), (0.5, 4, "good"), (1.0, 2, "fair")], inverse=True)
-            display_value = de_val
-            display_name = "Debt/Equity"
-        
-        total += pts
-        results.append(RuleResult("B1", display_name, "Buffett/Graham", display_value, pts, 5, grade))
+        results.append(RuleResult("B1", "Debt/Equity Guardrail", "Buffett/Graham", de, pts, 5, grade))
 
     cr = data.get("currentRatio")
     if cr is not None and cr < 1.0 and cr > 0:

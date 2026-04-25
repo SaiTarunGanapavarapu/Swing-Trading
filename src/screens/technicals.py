@@ -5,20 +5,36 @@ def score(data: dict) -> tuple[float, list[RuleResult]]:
     results = []
     total = 0
 
-    val = data.get("above200Sma")
-    pts = 1.5 if val else 0
-    total += pts
-    results.append(RuleResult("T1", "Above 200 SMA", "Technical", val, pts, 1.5, "yes" if val else "no"))
+    # T1/T2/T3 stacking disabled in favor of one mutually exclusive trend alignment rule.
+    # val = data.get("above200Sma")
+    # pts = 1.5 if val else 0
+    # total += pts
+    # results.append(RuleResult("T1", "Above 200 SMA", "Technical", val, pts, 1.5, "yes" if val else "no"))
+    #
+    # val = data.get("above50Sma")
+    # pts = 1.0 if val else 0
+    # total += pts
+    # results.append(RuleResult("T2", "Above 50 SMA", "Technical", val, pts, 1.0, "yes" if val else "no"))
+    #
+    # val = data.get("goldenAlignment")
+    # pts = 1.5 if val else 0
+    # total += pts
+    # results.append(RuleResult("T3", "Golden Alignment", "Technical", val, pts, 1.5, "yes" if val else "no"))
 
-    val = data.get("above50Sma")
-    pts = 1.0 if val else 0
-    total += pts
-    results.append(RuleResult("T2", "Above 50 SMA", "Technical", val, pts, 1.0, "yes" if val else "no"))
+    above200Sma = data.get("above200Sma")
+    above50Sma = data.get("above50Sma")
+    goldenAlignment = data.get("goldenAlignment")
 
-    val = data.get("goldenAlignment")
-    pts = 1.5 if val else 0
+    if goldenAlignment:
+        pts, grade = 5, "excellent"
+    elif above50Sma:
+        pts, grade = 3, "good"
+    elif above200Sma:
+        pts, grade = 1, "fair"
+    else:
+        pts, grade = 0, "fail"
     total += pts
-    results.append(RuleResult("T3", "Golden Alignment", "Technical", val, pts, 1.5, "yes" if val else "no"))
+    results.append(RuleResult("T1", "Trend Alignment", "Technical", goldenAlignment if goldenAlignment is not None else above50Sma if above50Sma is not None else above200Sma, pts, 5, grade))
 
     rsi = data.get("rsi14", 50)
     if rsi is None:

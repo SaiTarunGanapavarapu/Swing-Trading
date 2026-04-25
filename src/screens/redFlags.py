@@ -5,9 +5,10 @@ def detect(data: dict) -> list[str]:
     if pp is not None and pp > 25:
         flags.append("🚨 CRITICAL_PLEDGE_RISK")
 
-    de = data.get("debtToEquity", 0)
-    if de and de > 2.0:
-        flags.append("🚨 EXCESSIVE_DEBT")
+    # Debt/Equity is handled as a balance-sheet guardrail; keep this flag disabled.
+    # de = data.get("debtToEquity", 0)
+    # if de and de > 2.0:
+    #     flags.append("🚨 EXCESSIVE_DEBT")
 
     pe = data.get("peRatio", 0)
     if pe and pe < 0:

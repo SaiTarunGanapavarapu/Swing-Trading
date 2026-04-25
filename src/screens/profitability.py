@@ -18,15 +18,17 @@ def score(data: dict) -> tuple[float, list[RuleResult]]:
         
         return pts, display_name, display_value, grade
 
+    # P1 Gross Margin and P2 Net Margin disabled to avoid margin cascade double-counting.
+    # ("P1", "Gross Margin", "Buffett", data.get("grossMargin", 0), 5,
+    #  [(60, 5, "excellent"), (40, 3, "good"), (20, 1, "fair")], False, False),
+    # ("P2", "Net Margin", "Buffett", data.get("netMargin", 0), 4,
+    #  [(25, 4, "excellent"), (20, 3, "good"), (10, 1, "fair")], False, False),
+    # P4 ROE disabled because it overlaps with leverage and net-margin effects.
+    # ("P4", "ROE", "Buffett", data.get("roe", 0), 5,
+    #  [(25, 5, "excellent"), (20, 3, "good"), (15, 1, "fair")], False, False),
     rules = [
-        ("P1", "Gross Margin", "Buffett", data.get("grossMargin", 0), 5,
-         [(60, 5, "excellent"), (40, 3, "good"), (20, 1, "fair")], False, False),
-        ("P2", "Net Margin", "Buffett", data.get("netMargin", 0), 4,
-         [(25, 4, "excellent"), (20, 3, "good"), (10, 1, "fair")], False, False),
         ("P3", "Operating Margin", "Buffett", data.get("operatingMargin", 0), 4,
          [(25, 4, "excellent"), (15, 3, "good"), (10, 1, "fair")], False, False),
-        ("P4", "ROE", "Buffett", data.get("roe", 0), 5,
-         [(25, 5, "excellent"), (20, 3, "good"), (15, 1, "fair")], False, False),
         ("P5", "ROCE", "Buffett/Graham", data.get("roce", 0), 4,
          [(25, 4, "excellent"), (15, 3, "good"), (10, 1, "fair")], False, False),
         ("P6", "EPS Growth", "Lynch", data.get("epsGrowth5yr", 0), 4,

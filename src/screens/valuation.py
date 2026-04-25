@@ -23,7 +23,7 @@ def score(data: dict) -> tuple[float, list[RuleResult]]:
     total = 0
 
     # === HARD GUARDRAILS ===
-    # Loss-making companies get hard caps regardless of z-score
+    # P/E is now a guardrail only; EV/EBITDA is the primary valuation score.
     pe = data.get("peRatio")
     if pe is not None and pe < 0:
         # Hard fail: loss-making
@@ -31,23 +31,25 @@ def score(data: dict) -> tuple[float, list[RuleResult]]:
         results.append(RuleResult("V1", "P/E Ratio", "Graham", pe, pts, 5, grade))
         total += pts
     else:
-        # P/E Ratio - Z-score tiers: < -1.0 (excellent), -1.0 to 0 (good), 0 to 1.0 (fair), > 1.0 (poor)
-        if pe and pe > 0:
-            zscore = data.get("_zscores", {}).get("peRatio_zscore")
-            if zscore is not None:
-                # For PE (inverse): lower z-scores are better (z < mean is good)
-                pts, grade = scoreTieredZScore(zscore, [(-1.0, 5, "excellent"), (0.0, 3, "good"), (1.0, 1, "fair")], inverse=True)
-                display_value = zscore
-                display_label = f"P/E Ratio Z-Score"
-            else:
-                pts, grade = scoreTiered(pe, [(12, 5, "excellent"), (20, 3, "good"), (30, 1, "fair")], inverse=True)
-                display_value = pe
-                display_label = "P/E Ratio"
-        else:
-            pts, grade = 0, "N/A"
-            display_value = pe
-            display_label = "P/E Ratio"
-        total += pts
+        # P/E guardrail only. Keep the old scoring logic commented out for reference.
+        # if pe and pe > 0:
+        #     zscore = data.get("_zscores", {}).get("peRatio_zscore")
+        #     if zscore is not None:
+        #         # For PE (inverse): lower z-scores are better (z < mean is good)
+        #         pts, grade = scoreTieredZScore(zscore, [(-1.0, 5, "excellent"), (0.0, 3, "good"), (1.0, 1, "fair")], inverse=True)
+        #         display_value = zscore
+        #         display_label = f"P/E Ratio Z-Score"
+        #     else:
+        #         pts, grade = scoreTiered(pe, [(12, 5, "excellent"), (20, 3, "good"), (30, 1, "fair")], inverse=True)
+        #         display_value = pe
+        #         display_label = "P/E Ratio"
+        # else:
+        #     pts, grade = 0, "N/A"
+        #     display_value = pe
+        #     display_label = "P/E Ratio"
+        pts, grade = 0, "guardrail"
+        display_value = pe
+        display_label = "P/E Ratio"
         results.append(RuleResult("V1", display_label, "Graham", display_value, pts, 5, grade))
 
     # PEG Ratio - Z-score tiers
@@ -115,10 +117,11 @@ def score(data: dict) -> tuple[float, list[RuleResult]]:
     total += pts
     results.append(RuleResult("V5", display_label, "Buffett", display_value, pts, 3, grade))
 
-    ey = data.get("earningsYield", 0)
-    pts, grade = scoreTiered(ey, [(10, 3, "excellent"), (7, 2, "good"), (4, 1, "fair")], False)
-    total += pts
-    results.append(RuleResult("V6", "Earnings Yield", "Graham", ey, pts, 3, grade))
+    # V6 (Earnings Yield) disabled to avoid double-counting P/E.
+    # ey = data.get("earningsYield", 0)
+    # pts, grade = scoreTiered(ey, [(10, 3, "excellent"), (7, 2, "good"), (4, 1, "fair")], False)
+    # total += pts
+    # results.append(RuleResult("V6", "Earnings Yield", "Graham", ey, pts, 3, grade))
 
     dy = data.get("dividendYield", 0)
     pts, grade = scoreTiered(dy, [(3.0, 2, "excellent"), (1.5, 1.5, "good"), (0.5, 0.5, "fair")], False)
