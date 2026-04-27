@@ -129,6 +129,8 @@ class ScreeningService:
                     rowData = stripCacheMeta(cachedRow)
                     source = "stale-cache"
 
+                time.sleep(1.2)
+
             allData.append((rowData, source))
             if not options.quiet:
                 print(f"✓")
@@ -175,8 +177,6 @@ class ScreeningService:
                             f"✅ Score: {scoredData['total_score']}/{scoredData.get('score_out_of', 100)} "
                             f"{scoredData['grade']} | Coverage: {scoredData.get('data_coverage_pct', 0)}%"
                         )
-
-            time.sleep(1.2)
 
         if useCache and cacheDirty:
             saveDataCache(cacheData, options.cacheFile)
