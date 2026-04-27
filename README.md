@@ -153,14 +153,29 @@ Each run also creates a timestamped JSON file containing the same ranked rows an
 ## Project Layout
 
 ```text
+README.md
+requirements.txt
 main.py
+main.ipynb
+
 src/
+  cache.py
+  config.py
+  dataLoader.py
   engine.py
   fetcher.py
   indicators.py
-  scoringEngine.py
+  models.py
   reporting.py
+  scoringCommon.py
+  scoringEngine.py
+  screeningService.py
+  stockClassifier.py
+  storage.py
+  universe.py
+
   screens/
+    financialOverrides.py
     profitability.py
     balanceSheet.py
     valuation.py
