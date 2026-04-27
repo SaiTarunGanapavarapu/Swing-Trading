@@ -11,6 +11,11 @@ def normalizeScore(rawScore: float, rawMaxScore: float, targetMaxScore: float) -
     return round((rawScore / rawMaxScore) * targetMaxScore, 1)
 
 
+def getRawMaxScore(ruleResults: list, excludedRuleIds: set[str] | None = None) -> float:
+    excluded = excludedRuleIds or set()
+    return float(sum(rule.maxScore for rule in ruleResults if rule.ruleId not in excluded))
+
+
 def normalizeScoringInput(data: dict) -> dict:
     normalizedData = dict(data)
     keyMap = {
@@ -67,19 +72,20 @@ def scoreStock(data: dict) -> dict:
 
     data = normalizeScoringInput(data)
 
-    profitabilityScore, _ = profitability.score(data)
-    balanceSheetScore, _ = balanceSheet.score(data)
-    valuationScore, _ = valuation.score(data)
-    qualityScore, _ = quality.score(data)
-    technicalScore, _ = technicals.score(data)
+    profitabilityScore, profitabilityRules = profitability.score(data)
+    balanceSheetScore, balanceSheetRules = balanceSheet.score(data)
+    valuationScore, valuationRules = valuation.score(data)
+    qualityScore, qualityRules = quality.score(data)
+    technicalScore, technicalRules = technicals.score(data)
     flags = redFlags.detect(data)
 
-    # Keep the public section scores normalized to the original 100-point layout.
-    profitabilityScore = normalizeScore(profitabilityScore, 16.0, 30.0)
-    balanceSheetScore = normalizeScore(balanceSheetScore, 15.0, 20.0)
-    valuationScore = normalizeScore(valuationScore, 17.0, 25.0)
-    qualityScore = normalizeScore(qualityScore, 15.0, 15.0)
-    technicalScore = normalizeScore(technicalScore, 11.0, 10.0)
+    # Keep the public section scores normalized to the original 100-point layout,
+    # but derive each section's raw max from active rule metadata.
+    profitabilityScore = normalizeScore(profitabilityScore, getRawMaxScore(profitabilityRules), 30.0)
+    balanceSheetScore = normalizeScore(balanceSheetScore, getRawMaxScore(balanceSheetRules, {"B1"}), 20.0)
+    valuationScore = normalizeScore(valuationScore, getRawMaxScore(valuationRules, {"V1", "V6"}), 25.0)
+    qualityScore = normalizeScore(qualityScore, getRawMaxScore(qualityRules), 15.0)
+    technicalScore = normalizeScore(technicalScore, getRawMaxScore(technicalRules), 10.0)
 
     totalRawScore = profitabilityScore + balanceSheetScore + valuationScore + qualityScore + technicalScore
     penalty = 2.0 * sum(1 for flag in flags if "🚨" in flag)
@@ -176,7 +182,8 @@ def scoreStock(data: dict) -> dict:
 
     intrinsicScore = totalScore
     scoreOutOf = round(100.0 * (dataCoveragePct / 100.0), 1)
-    finalScore = round(intrinsicScore * (0.5 + 0.5 * (dataConfidence / 100.0)), 1)
+    # finalScore is intentionally disabled because ranking uses totalScore.
+    # finalScore = round(intrinsicScore * (0.5 + 0.5 * (dataConfidence / 100.0)), 1)
 
     # Flatten z-scores from _zscores dict into individual columns for reporting
     zScoresFlat = {}
@@ -198,7 +205,7 @@ def scoreStock(data: dict) -> dict:
             "intrinsicScore": intrinsicScore,
             "dataConfidence": dataConfidence,
             "data_confidence": dataConfidence,
-            "finalScore": finalScore,
+            # "finalScore": finalScore,
             "profitabilityScore": round(profitabilityScore, 1),
             "profitability": round(profitabilityScore, 1),
             "balanceSheetScore": round(balanceSheetScore, 1),

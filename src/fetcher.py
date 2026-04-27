@@ -111,6 +111,7 @@ def _fillDerivedMetrics(ticker, raw: dict, info: dict) -> None:
     enterpriseValue = info.get("enterpriseValue") if not isNoneOrNan(info.get("enterpriseValue")) else None
 
     operatingIncome = _getStatementMetric(inc, ["Operating Income", "Operating Income Or Loss"])
+    ebit = _getStatementMetric(inc, ["EBIT", "Ebit", "Operating Income", "Operating Income Or Loss"])
     grossProfit = _getStatementMetric(inc, ["Gross Profit"])
     totalRevenue = _getStatementMetric(inc, ["Total Revenue", "Operating Revenue", "Revenue"])
     netIncome = _getStatementMetric(inc, ["Net Income", "Net Income Common Stockholders"])
@@ -170,6 +171,14 @@ def _fillDerivedMetrics(ticker, raw: dict, info: dict) -> None:
         if netIncome is not None and equity and equity > 0:
             raw["returnOnEquity"] = float(netIncome) / float(equity)
 
+    if isNoneOrNan(raw.get("returnOnCapitalEmployed")):
+        totalAssets = _getStatementMetric(bs, ["Total Assets"])
+        currentLiabilities = _getStatementMetric(bs, ["Current Liabilities", "Total Current Liabilities"])
+        if ebit is not None and totalAssets is not None and currentLiabilities is not None:
+            capitalEmployed = float(totalAssets) - float(currentLiabilities)
+            if capitalEmployed > 0:
+                raw["returnOnCapitalEmployed"] = float(ebit) / capitalEmployed
+
     if isNoneOrNan(raw.get("pegRatio")):
         pe = raw.get("trailingPE")
         eg = raw.get("earningsGrowth")
@@ -217,6 +226,7 @@ def fetchStockData(symbol: str) -> dict:
 
         rawInfoKeys = [
             "marketCap", "grossMargins", "operatingMargins", "profitMargins", "returnOnEquity",
+            "returnOnCapitalEmployed",
             "trailingPE", "pegRatio", "priceToBook", "enterpriseToEbitda", "debtToEquity",
             "currentRatio", "dividendYield", "revenueGrowth", "earningsGrowth", "trailingEps",
             "bookValue", "totalDebt", "totalCash", "ebitda", "currentPrice", "regularMarketPrice",
@@ -238,8 +248,7 @@ def fetchStockData(symbol: str) -> dict:
         fcfMetrics = computeFcfMetrics(ticker)
         interestCoverage = computeInterestCoverage(ticker)
         profitableYears = estimateProfitableYears(ticker)
-        # Keep parity with screener.py's rough dividend continuity estimate.
-        dividendYears = 5 if (getRaw("dividendYield", 0.0) or 0.0) > 0 else 0
+        dividendYears = computeDividendYears(ticker)
 
         currentPrice = getRaw("currentPrice") or getRaw("regularMarketPrice")
         if not currentPrice and hist is not None and not hist.empty:
@@ -257,7 +266,10 @@ def fetchStockData(symbol: str) -> dict:
         operatingMargin = operatingMargins * 100 if operatingMargins else 0.0
         netMargin = profitMargins * 100 if profitMargins else 0.0
         roePct = roe * 100 if roe else 0.0
-        rocePct = roePct * 0.85
+        roce = toFloatOrNone(getRaw("returnOnCapitalEmployed", None))
+        rocePct = percentOrNone(roce)
+        if rocePct is None:
+            rocePct = 0.0
 
         revenueGrowth = toFloatOrNone(getRaw("revenueGrowth", None))
         earningsGrowth = toFloatOrNone(getRaw("earningsGrowth", None))
