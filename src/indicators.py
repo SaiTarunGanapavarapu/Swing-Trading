@@ -83,6 +83,7 @@ def computeTechnicalIndicators(hist: pd.DataFrame) -> dict:
             "rsi14": None,
             "volumeRatio": None,
             "pctFrom52wHigh": None,
+            "momentum6m1m": None,
             "macdBullish": None,
             "atr": None,
             "adx": None,
@@ -108,6 +109,7 @@ def computeTechnicalIndicators(hist: pd.DataFrame) -> dict:
             "rsi14": None,
             "volumeRatio": None,
             "pctFrom52wHigh": None,
+            "momentum6m1m": None,
             "macdBullish": None,
             "atr": None,
             "adx": None,
@@ -139,6 +141,14 @@ def computeTechnicalIndicators(hist: pd.DataFrame) -> dict:
     high52w = histDf["High"].dropna().max()
     pctFromHigh = ((high52w - price) / high52w) * 100 if high52w > 0 else 0
 
+    # 6-month momentum excluding the most recent month (about 126d lookback, 21d skip).
+    momentum6m1m = None
+    if len(close) >= 127:
+        recentReference = close.iloc[-22]
+        pastReference = close.iloc[-127]
+        if pastReference and pastReference > 0:
+            momentum6m1m = ((recentReference / pastReference) - 1.0) * 100.0
+
     ema12 = close.ewm(span=12).mean()
     ema26 = close.ewm(span=26).mean()
     macd = ema12 - ema26
@@ -154,6 +164,7 @@ def computeTechnicalIndicators(hist: pd.DataFrame) -> dict:
         "rsi14": float(rsi),
         "volumeRatio": float(volRatio),
         "pctFrom52wHigh": float(pctFromHigh),
+        "momentum6m1m": float(momentum6m1m) if momentum6m1m is not None else None,
         "macdBullish": bool(macdBull),
         "atr": atrAdxData.get("atr"),
         "adx": atrAdxData.get("adx"),

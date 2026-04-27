@@ -50,6 +50,8 @@ def normalizeScoringInput(data: dict) -> dict:
         "rsi_14": "rsi14",
         "volume_ratio": "volumeRatio",
         "pct_from_52w_high": "pctFrom52wHigh",
+        "momentum_6m_1m": "momentum6m1m",
+        "momentum6m1m": "momentum6m1m",
         "macd_bullish": "macdBullish",
         "atr": "atr",
         "adx": "adx",
@@ -133,7 +135,7 @@ def scoreStock(data: dict) -> dict:
         "goldenAlignment",
         "rsi14",
         "volumeRatio",
-        "pctFrom52wHigh",
+        "momentum6m1m",
         "macdBullish",
     ]
 
@@ -173,7 +175,7 @@ def scoreStock(data: dict) -> dict:
         "goldenAlignment": 1.0,
         "rsi14": 1.0,
         "volumeRatio": 1.0,
-        "pctFrom52wHigh": 1.0,
+        "momentum6m1m": 1.0,
         "macdBullish": 1.0,
     }
     weightTotal = sum(confidenceWeights.values())

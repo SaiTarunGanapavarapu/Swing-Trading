@@ -64,17 +64,22 @@ def score(data: dict) -> tuple[float, list[RuleResult]]:
     total += pts
     results.append(RuleResult("T5", "Volume Surge", "Technical", vr, pts, 1.0, grade))
 
-    pct = data.get("pctFrom52wHigh", 100)
-    if pct is None:
-        pct = 100
-    if pct <= 10:
-        pts, grade = 0.5, "near_high"
-    elif pct <= 20:
-        pts, grade = 0.25, "moderate"
+    # T6: 6-Month Momentum (excluding the most recent month)
+    mom = data.get("momentum6m1m")
+    if mom is None:
+        pts, grade = 0, "no_data"
+    elif mom > 30:
+        pts, grade = 2.5, "strong"
+    elif mom > 15:
+        pts, grade = 2, "good"
+    elif mom > 5:
+        pts, grade = 1, "mild"
+    elif mom > 0:
+        pts, grade = 0.5, "flat"
     else:
-        pts, grade = 0, "far"
+        pts, grade = 0, "negative"
     total += pts
-    results.append(RuleResult("T6", "Near 52W High", "Technical", pct, pts, 0.5, grade))
+    results.append(RuleResult("T6", "6M Momentum", "Momentum", mom, pts, 2.5, grade))
 
     # ========== ATR/ADX Rules ==========
     # T7: ADX (Trend Strength)
