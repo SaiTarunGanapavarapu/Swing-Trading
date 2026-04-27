@@ -2,6 +2,19 @@ import pandas as pd
 from datetime import datetime
 
 
+def printFinancialClassification(df: pd.DataFrame):
+    if df is None or df.empty or "isFinancial" not in df.columns:
+        return
+
+    financials = df[df["isFinancial"] == True]
+    print(f"\nClassified as financial: {len(financials)}/{len(df)}")
+    for _, row in financials.iterrows():
+        symbol = str(row.get("symbol", ""))
+        sector = str(row.get("sector", ""))
+        industry = str(row.get("industry", ""))
+        print(f"  {symbol:20s} {sector:25s} {industry}")
+
+
 def printResults(df: pd.DataFrame):
     if df is None or df.empty:
         return
@@ -16,6 +29,7 @@ def printResults(df: pd.DataFrame):
         "scoreOutOf",
         "dataCoveragePct",
         "grade",
+        "isFinancial",
         "intrinsicScore",
         "dataConfidence",
         "profitability",
@@ -41,6 +55,7 @@ def printResults(df: pd.DataFrame):
             "scoreOutOf": "OutOf",
             "dataCoveragePct": "Coverage%",
             "grade": "Grade",
+            "isFinancial": "IsFinancial",
             "intrinsicScore": "Intrinsic",
             "dataConfidence": "Confidence%",
             "profitability": "Prof/30",
@@ -86,6 +101,7 @@ def exportToExcel(df: pd.DataFrame, filename: str = "swingCandidates.xlsx"):
                 "scoreOutOf",
                 "dataCoveragePct",
                 "grade",
+                "isFinancial",
                 "intrinsicScore",
                 "dataConfidence",
                 "profitabilityScore",

@@ -1,4 +1,6 @@
 from .screens import balanceSheet, profitability, quality, redFlags, technicals, valuation
+from .scoringCommon import RuleResult, scoreTiered
+from .stockClassifier import isFinancialStock
 
 
 def isMissing(value) -> bool:
@@ -68,26 +70,155 @@ def normalizeScoringInput(data: dict) -> dict:
     return normalizedData
 
 
+def scoreFinancialProfitability(data: dict) -> tuple[float, list[RuleResult]]:
+    results = []
+    total = 0.0
+
+    roe = data.get("roe")
+    points, grade = scoreTiered(roe, [(18, 5, "excellent"), (15, 3, "good"), (12, 1, "fair")], False)
+    total += points
+    results.append(RuleResult("FP1", "ROE", "Buffett", roe, points, 5, grade))
+
+    netMargin = data.get("netMargin")
+    points, grade = scoreTiered(netMargin, [(20, 4, "excellent"), (15, 3, "good"), (8, 1, "fair")], False)
+    total += points
+    results.append(RuleResult("FP2", "Net Margin", "Buffett", netMargin, points, 4, grade))
+
+    epsGrowth = data.get("epsGrowth5yr")
+    points, grade = scoreTiered(epsGrowth, [(20, 4, "excellent"), (15, 3, "good"), (10, 1, "fair")], False)
+    if epsGrowth and epsGrowth > 30:
+        points = min(points, 2)
+        grade = "caution"
+    total += points
+    results.append(RuleResult("FP3", "EPS Growth", "Lynch", epsGrowth, points, 4, grade))
+
+    revenueGrowth = data.get("revenueGrowth3yr")
+    points, grade = scoreTiered(revenueGrowth, [(20, 2, "excellent"), (10, 1.5, "good"), (5, 0.5, "fair")], False)
+    total += points
+    results.append(RuleResult("FP4", "Revenue Growth 3Y", "Lynch", revenueGrowth, points, 2, grade))
+
+    return total, results
+
+
+def scoreFinancialBalanceSheet(data: dict) -> tuple[float, list[RuleResult]]:
+    results = []
+    total = 0.0
+
+    financialLeverage = data.get("financialLeverage")
+    if financialLeverage is not None:
+        if financialLeverage > 16:
+            points, grade = 0, "CRITICAL_LEVERAGE"
+        elif financialLeverage <= 4.5:
+            points, grade = 4, "conservative"
+        elif financialLeverage <= 8.5:
+            points, grade = 3, "moderate"
+        elif financialLeverage <= 11.0:
+            points, grade = 1, "aggressive"
+        else:
+            points, grade = 0, "very_aggressive"
+    else:
+        debtToEquity = data.get("debtToEquity")
+        if debtToEquity is not None and debtToEquity > 15.0:
+            points, grade = 0, "CRITICAL_LEVERAGE"
+        elif debtToEquity is not None:
+            if debtToEquity <= 6:
+                points, grade = 4, "conservative"
+            elif debtToEquity <= 9:
+                points, grade = 3, "moderate"
+            elif debtToEquity <= 12:
+                points, grade = 1, "aggressive"
+            else:
+                points, grade = 0, "very_aggressive"
+        else:
+            points, grade = 2, "unknown"
+    total += points
+    displayValue = financialLeverage if financialLeverage is not None else data.get("debtToEquity")
+    displayName = "Financial Leverage (Assets/Equity)" if financialLeverage is not None else "D/E (Bank Scale)"
+    results.append(RuleResult("FB1", displayName, "Graham", displayValue, points, 4, grade))
+
+    return total, results
+
+
+def scoreFinancialValuation(data: dict) -> tuple[float, list[RuleResult]]:
+    results = []
+    total = 0.0
+
+    pbRatio = data.get("pbRatio")
+    if pbRatio and pbRatio > 0:
+        points, grade = scoreTiered(pbRatio, [(1.2, 5, "excellent"), (2.0, 3, "good"), (3.5, 1, "fair")], True)
+    else:
+        points, grade = 0, "N/A"
+    total += points
+    results.append(RuleResult("FV1", "P/B Ratio", "Graham", pbRatio, points, 5, grade))
+
+    peRatio = data.get("peRatio")
+    if peRatio and peRatio > 0:
+        points, grade = scoreTiered(peRatio, [(12, 4, "excellent"), (18, 3, "good"), (25, 1, "fair")], True)
+    elif peRatio and peRatio < 0:
+        points, grade = 0, "loss_making"
+    else:
+        points, grade = 0, "N/A"
+    total += points
+    results.append(RuleResult("FV2", "P/E Ratio", "Graham", peRatio, points, 4, grade))
+
+    pegRatio = data.get("pegRatio")
+    if pegRatio and pegRatio > 0:
+        points, grade = scoreTiered(pegRatio, [(0.5, 3, "excellent"), (1.0, 2, "good"), (1.5, 1, "fair")], True)
+    else:
+        points, grade = 0, "N/A"
+    total += points
+    results.append(RuleResult("FV3", "PEG Ratio", "Lynch", pegRatio, points, 3, grade))
+
+    dividendYield = data.get("dividendYield")
+    points, grade = scoreTiered(dividendYield, [(3.0, 2, "excellent"), (1.5, 1.5, "good"), (0.5, 0.5, "fair")], False)
+    total += points
+    results.append(RuleResult("FV4", "Dividend Yield", "Graham", dividendYield, points, 2, grade))
+
+    return total, results
+
+
 def scoreStock(data: dict) -> dict:
     if data.get("error"):
         return data
 
     data = normalizeScoringInput(data)
+    isFinancial = bool(
+        data.get("isFinancialStock")
+        if data.get("isFinancialStock") is not None
+        else isFinancialStock(data.get("symbol", ""), data.get("sector", ""), data.get("industry", ""))
+    )
+    data["isFinancial"] = isFinancial
+    data["isFinancialStock"] = isFinancial
 
-    profitabilityScore, profitabilityRules = profitability.score(data)
-    balanceSheetScore, balanceSheetRules = balanceSheet.score(data)
-    valuationScore, valuationRules = valuation.score(data)
+    if isFinancial:
+        profitabilityScore, profitabilityRules = scoreFinancialProfitability(data)
+        balanceSheetScore, balanceSheetRules = scoreFinancialBalanceSheet(data)
+        valuationScore, valuationRules = scoreFinancialValuation(data)
+    else:
+        profitabilityScore, profitabilityRules = profitability.score(data)
+        balanceSheetScore, balanceSheetRules = balanceSheet.score(data)
+        valuationScore, valuationRules = valuation.score(data)
     qualityScore, qualityRules = quality.score(data)
     technicalScore, technicalRules = technicals.score(data)
     flags = redFlags.detect(data)
 
-    # Keep the public section scores normalized to the original 100-point layout,
-    # but derive each section's raw max from active rule metadata.
-    profitabilityScore = normalizeScore(profitabilityScore, getRawMaxScore(profitabilityRules), 30.0)
-    balanceSheetScore = normalizeScore(balanceSheetScore, getRawMaxScore(balanceSheetRules, {"B1"}), 20.0)
-    valuationScore = normalizeScore(valuationScore, getRawMaxScore(valuationRules, {"V1", "V6"}), 25.0)
-    qualityScore = normalizeScore(qualityScore, getRawMaxScore(qualityRules), 15.0)
-    technicalScore = normalizeScore(technicalScore, getRawMaxScore(technicalRules), 10.0)
+    profitabilityRawScore = float(sum(rule.score for rule in profitabilityRules))
+    balanceSheetRawScore = float(sum(rule.score for rule in balanceSheetRules))
+    valuationRawScore = float(sum(rule.score for rule in valuationRules))
+    qualityRawScore = float(sum(rule.score for rule in qualityRules))
+    technicalRawScore = float(sum(rule.score for rule in technicalRules))
+
+    if isFinancial:
+        profitabilityScore = normalizeScore(profitabilityRawScore, getRawMaxScore(profitabilityRules), 30.0)
+        balanceSheetScore = normalizeScore(balanceSheetRawScore, getRawMaxScore(balanceSheetRules), 20.0)
+        valuationScore = normalizeScore(valuationRawScore, getRawMaxScore(valuationRules), 25.0)
+    else:
+        profitabilityScore = normalizeScore(profitabilityRawScore, getRawMaxScore(profitabilityRules), 30.0)
+        balanceSheetScore = normalizeScore(balanceSheetRawScore, getRawMaxScore(balanceSheetRules, {"B1"}), 20.0)
+        valuationScore = normalizeScore(valuationRawScore, getRawMaxScore(valuationRules, {"V1", "V6"}), 25.0)
+
+    qualityScore = normalizeScore(qualityRawScore, getRawMaxScore(qualityRules), 15.0)
+    technicalScore = normalizeScore(technicalRawScore, getRawMaxScore(technicalRules), 10.0)
 
     totalRawScore = profitabilityScore + balanceSheetScore + valuationScore + qualityScore + technicalScore
     penalty = 2.0 * sum(1 for flag in flags if "🚨" in flag)
@@ -225,6 +356,7 @@ def scoreStock(data: dict) -> dict:
             "pe": data.get("peRatio"),
             "de": data.get("debtToEquity"),
             "rsi": data.get("rsi14"),
+            "isFinancial": isFinancial,
         }
     )
     scoredData.update(zScoresFlat)

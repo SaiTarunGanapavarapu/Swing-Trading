@@ -4,6 +4,7 @@ import pandas as pd
 import yfinance as yf
 
 from .indicators import computeFcfMetrics, computeInterestCoverage, computeTechnicals, estimateProfitableYears
+from .stockClassifier import isFinancialStock
 
 
 def isNoneOrNan(value):
@@ -17,13 +18,6 @@ def toFloatOrNone(value):
         return float(value)
     except Exception:
         return None
-
-
-def safeGet(d: dict, key: str, default=None):
-    if isinstance(d, dict):
-        value = d.get(key, default)
-        return default if value is None else value
-    return default
 
 
 def percentOrNone(value):
@@ -171,6 +165,12 @@ def _fillDerivedMetrics(ticker, raw: dict, info: dict) -> None:
         if netIncome is not None and equity and equity > 0:
             raw["returnOnEquity"] = float(netIncome) / float(equity)
 
+    if isNoneOrNan(raw.get("financialLeverage")):
+        totalAssets = _getStatementMetric(bs, ["Total Assets"])
+        equity = _getStatementMetric(bs, ["Stockholders Equity", "Total Stockholder Equity", "Common Stock Equity", "Total Equity Gross Minority Interest"])
+        if totalAssets is not None and equity and equity > 0:
+            raw["financialLeverage"] = float(totalAssets) / float(equity)
+
     if isNoneOrNan(raw.get("returnOnCapitalEmployed")):
         totalAssets = _getStatementMetric(bs, ["Total Assets"])
         currentLiabilities = _getStatementMetric(bs, ["Current Liabilities", "Total Current Liabilities"])
@@ -227,6 +227,7 @@ def fetchStockData(symbol: str) -> dict:
         rawInfoKeys = [
             "marketCap", "grossMargins", "operatingMargins", "profitMargins", "returnOnEquity",
             "returnOnCapitalEmployed",
+            "financialLeverage",
             "trailingPE", "pegRatio", "priceToBook", "enterpriseToEbitda", "debtToEquity",
             "currentRatio", "dividendYield", "revenueGrowth", "earningsGrowth", "trailingEps",
             "bookValue", "totalDebt", "totalCash", "ebitda", "currentPrice", "regularMarketPrice",
@@ -256,6 +257,9 @@ def fetchStockData(symbol: str) -> dict:
 
         marketCap = getRaw("marketCap", 0.0)
         marketCapCr = marketCap / 1e7
+        sector = info.get("sector", "")
+        industry = info.get("industry", "")
+        isFinancial = isFinancialStock(symbol, sector, industry)
 
         grossMargins = getRaw("grossMargins", 0.0)
         operatingMargins = getRaw("operatingMargins", 0.0)
@@ -276,9 +280,16 @@ def fetchStockData(symbol: str) -> dict:
         revenueGrowthPct = revenueGrowth * 100 if revenueGrowth is not None else None
         earningsGrowthPct = earningsGrowth * 100 if earningsGrowth is not None else None
 
-        deRaw = getRaw("debtToEquity", None)
-        if deRaw is not None and deRaw > 5:
-            deRaw = deRaw / 100  # yfinance sometimes returns as %
+        deRaw = toFloatOrNone(getRaw("debtToEquity", None))
+        if deRaw is not None:
+            if isFinancial:
+                # Financial names can come through as values like 70-120, which map to ~7-12x leverage.
+                if deRaw > 100:
+                    deRaw = deRaw / 10.0
+            else:
+                # Non-financial D/E sometimes arrives as a percentage-style number.
+                if deRaw > 5:
+                    deRaw = deRaw / 100.0
 
         peRatio = toFloatOrNone(getRaw("trailingPE", None))
         earningsYield = (100.0 / peRatio) if peRatio and peRatio > 0 else 0.0
@@ -296,16 +307,29 @@ def fetchStockData(symbol: str) -> dict:
         netDebt = totalDebt - totalCash
         netDebtToEbitda = netDebt / ebitda if ebitda > 0 else None
 
-        divYield = getRaw("dividendYield", 0.0)
-        dividendYieldPct = divYield * 100 if divYield else 0.0
+        dividendRate = toFloatOrNone(info.get("trailingAnnualDividendRate") or info.get("dividendRate"))
+        divYield = toFloatOrNone(getRaw("dividendYield", None))
+        if dividendRate is not None and currentPrice and currentPrice > 0:
+            dividendYieldPct = (dividendRate / currentPrice) * 100.0
+        elif divYield is None:
+            dividendYieldPct = 0.0
+        elif divYield <= 0.05:
+            dividendYieldPct = divYield * 100.0
+        elif divYield <= 20:
+            dividendYieldPct = divYield
+        else:
+            dividendYieldPct = divYield / 100.0
 
         evToEbitda = toFloatOrNone(getRaw("enterpriseToEbitda", None))
+        financialLeverage = toFloatOrNone(getRaw("financialLeverage", None))
 
         return {
             "symbol": symbol,
             "name": info.get("longName", symbol),
-            "sector": info.get("sector", ""),
-            "industry": info.get("industry", ""),
+            "sector": sector,
+            "industry": industry,
+            "isFinancialStock": isFinancial,
+            "financialLeverage": financialLeverage,
             "marketCapCr": marketCapCr,
             "currentPrice": currentPrice,
             "grossMargin": grossMargin,

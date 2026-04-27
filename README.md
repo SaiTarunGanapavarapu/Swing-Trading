@@ -9,15 +9,17 @@ It also uses selective z-score normalization and rule cleanup to reduce duplicat
 - Screens built-in universes: `nifty50`, `nifty200`, `banknifty`, `allstocks`
 - Accepts custom symbols or a CSV input
 - Pulls market and financial data from yfinance
+- Auto-detects financial stocks (banks, NBFCs, insurance, financial services)
 - Scores stocks across five sections:
   - Profitability
   - Balance sheet
   - Valuation
   - Quality
   - Technicals
+- Uses dedicated financial scoring rules when `isFinancial` is true
 - Uses a 6-month momentum factor excluding the most recent month inside the technicals section
 - Applies red-flag penalties for critical risk conditions
-- Sorts results by final score and exports them for review
+- Sorts results by total score and exports them for review
 
 ## Scoring At A Glance
 
@@ -30,6 +32,13 @@ The total score follows a 100-point layout across the five sections.
 - Technicals: 10
 
 The engine uses a mix of absolute thresholds and relative ranking where it helps. The point is to avoid rewarding the same idea twice and to reduce multicollinearity across overlapping rules.
+
+For financial names, the engine switches to an explicit financial model:
+
+- Financial profitability uses ROE, Net Margin, EPS Growth, and Revenue Growth.
+- Financial balance sheet uses `financialLeverage = Total Assets / Equity` (with D/E fallback).
+- Financial valuation emphasizes P/B, then P/E, PEG, and dividend yield.
+- Generic non-financial metrics like Current Ratio, Interest Coverage, and Net Debt/EBITDA are not used in the financial branch.
 
 ## Advanced Scoring Choices
 
@@ -49,6 +58,7 @@ The screener includes a few design choices to keep rankings cleaner and less bia
 - Leverage treatment cleanup:
   - Debt/Equity moved to guardrail behavior.
   - Net Debt/EBITDA kept as the primary solvency scoring metric.
+  - For financial stocks, balance-sheet leverage is evaluated with `financialLeverage` first.
 
 These changes keep the score on the same 100-point layout while reducing inflated scores from overlapping factors.
 
@@ -126,6 +136,7 @@ The terminal shows the ranked shortlist with the main fields:
 - ROE
 - 6M momentum
 - D/E
+- IsFinancial
 - RSI
 - Flags
 
