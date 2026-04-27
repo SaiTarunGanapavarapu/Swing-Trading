@@ -15,6 +15,7 @@ It also uses selective z-score normalization and rule cleanup to reduce duplicat
   - Valuation
   - Quality
   - Technicals
+- Uses a 6-month momentum factor excluding the most recent month inside the technicals section
 - Applies red-flag penalties for critical risk conditions
 - Sorts results by final score and exports them for review
 
@@ -44,6 +45,7 @@ The screener includes a few design choices to keep rankings cleaner and less bia
   - Dropped ROE scoring in favor of ROCE to reduce leverage-driven distortion.
 - Technical stacking control:
   - Replaced additive trend rules with a mutually exclusive trend alignment ladder so one strong trend does not get triple-counted.
+  - Added a separate 6M momentum (ex-1M) rule so trend direction and trend magnitude are scored independently.
 - Leverage treatment cleanup:
   - Debt/Equity moved to guardrail behavior.
   - Net Debt/EBITDA kept as the primary solvency scoring metric.
@@ -122,6 +124,7 @@ The terminal shows the ranked shortlist with the main fields:
 - Market cap
 - P/E
 - ROE
+- 6M momentum
 - D/E
 - RSI
 - Flags
