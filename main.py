@@ -13,7 +13,7 @@ def buildParser() -> argparse.ArgumentParser:
     parser.add_argument("--csv", help="CSV file with a 'Symbol' column")
     parser.add_argument(
         "--universe",
-        choices=["nifty50", "nifty200", "banknifty", "allstocksIndia", "dow", "sp500", "nasdaq100"],
+        choices=["nifty50", "nifty200", "banknifty", "allstocksindia", "dow", "sp500", "nasdaq100"],
         default="nifty50",
         help="Default universe when --symbols/--csv are not provided",
     )
