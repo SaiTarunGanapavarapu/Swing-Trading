@@ -6,7 +6,7 @@ It also uses selective z-score normalization and rule cleanup to reduce duplicat
 
 ## What It Does
 
-- Screens built-in universes: `nifty50`, `nifty200`, `banknifty`, `allstocks`
+- Screens built-in universes: `nifty50`, `nifty200`, `banknifty`, `allstocksIndia`, `dow`, `sp500`, `nasdaq100` 
 - Accepts custom symbols or a CSV input
 - Pulls market and financial data from yfinance
 - Auto-detects financial stocks (banks, NBFCs, insurance, financial services)
@@ -114,7 +114,7 @@ python main.py --universe nifty50 --cache on --refresh-cache --export refreshed.
 
 - `--symbols`: Space-separated ticker list
 - `--csv`: CSV input path with a symbol column
-- `--universe`: `nifty50 | nifty200 | banknifty | allstocks`
+- `--universe`: `nifty50 | nifty200 | banknifty | allstocks` | `dow` | `sp500` | `nasdaq100`
 - `--export`: Excel output file name
 - `--top`: Number of rows shown in the terminal
 - `--quiet`: Reduce terminal output
