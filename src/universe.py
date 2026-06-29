@@ -56,7 +56,7 @@ symbolsBankNifty = [
     "PNB.NS", "BANKBARODA.NS",
 ]
 
-symbolsAllUniverse = [
+symbolsAllUniverseIndia = [
     "20MICRONS.NS", "21STCENMGM.NS", "360ONE.NS", "3IINFOLTD.NS", "3MINDIA.NS",
     "3PLAND.NS", "5PAISA.NS", "63MOONS.NS", "A2ZINFRA.NS", "AAATECH.NS",
     "AADHARHFC.NS", "AAKASH.NS", "AAREYDRUGS.NS", "AARNAV.NS", "AARON.NS",
@@ -511,6 +511,80 @@ symbolsAllUniverse = [
     "ZUARIIND.NS", "ZYDUSLIFE.NS", "ZYDUSWELL.NS",
 ]
 
+dow = [
+    "AAPL", "AMZN", "AXP", "BA", "CAT", "CRM", "CSCO", "CVX", "DIS", "GS",
+    "HD", "HON", "IBM", "JNJ", "JPM", "KO", "MCD", "MMM", "MRK", "MSFT",
+    "NKE", "NVDA", "PG", "TRV", "UNH", "V", "VZ", "WMT", "XOM", "SBUX"
+]
+
+sp500 = [
+    "A", "AAL", "AAPL", "ABBV", "ABNB", "ABT", "ACGL", "ACN", "ADBE", "ADI",
+    "ADM", "ADP", "ADSK", "AEE", "AEP", "AES", "AFL", "AEM", "AIG", "AIZ",
+    "AJG", "AKAM", "ALB", "ALGN", "ALL", "ALLE", "AMAT", "AMCR", "AMD", "AME",
+    "AMGN", "AMP", "AMT", "AMZN", "ANET", "ANSS", "AON", "AOS", "APA", "APD",
+    "APH", "APO", "APTV", "ARE", "ATO", "AVB", "AVGO", "AVY", "AWK", "AXON",
+    "AXP", "AZO", "BA", "BAC", "BALL", "BAX", "BBY", "BDX", "BEN", "BF-B",
+    "BG", "BIIB", "BIO", "BK", "BKNG", "BKR", "BLDR", "BLK", "BMY", "BR",
+    "BRK-B", "BRO", "BSX", "BWA", "BX", "BXP", "C", "CAG", "CAH", "CARR",
+    "CAT", "CBOE", "CBRE", "CCI", "CCK", "CCL", "CDNS", "CDW", "CE", "CEG",
+    "CF", "CFG", "CHD", "CHRW", "CHTR", "CI", "CINF", "Cisco", "CL", "CLX",
+    "CMA", "CMG", "CMI", "CMS", "CNC", "CNP", "COF", "COO", "COP", "COR",
+    "COST", "CPB", "CPAY", "CPRT", "CPT", "CRL", "CRM", "CRWD", "CSCO", "CSGP",
+    "CSX", "CTAS", "CTRA", "CTSH", "CTVA", "CVS", "CVX", "CZR", "D", "DAL",
+    "DAY", "DD", "DE", "DECK", "DELL", "DFS", "DG", "DGX", "DHI", "DHR",
+    "DIS", "DLR", "DLTR", "DOC", "DOV", "DOW", "DPZ", "DRI", "DTE", "DUK",
+    "DVA", "DVN", "DXCM", "EA", "EBAY", "ECL", "ED", "EFX", "EG", "EIX",
+    "EL", "ELV", "EMN", "EMR", "ENPH", "EOG", "EPAM", "EQIX", "EQR", "EQT",
+    "ES", "ESS", "ETN", "ETR", "ETSY", "EVRG", "EW", "EXC", "EXPD", "EXPE",
+    "EXR", "F", "FANG", "FAST", "FI", "FIBK", "FICO", "FIS", "FITB", "FLT",
+    "FMC", "FOX", "FOXA", "FRT", "FSLR", "FTNT", "FTV", "GD", "GE", "GEV",
+    "GEHC", "GEN", "GILD", "GIS", "GL", "GLW", "GM", "GMED", "GMR", "GNRC",
+    "GOOG", "GOOGL", "GPC", "GPN", "GRMN", "GS", "GWRE", "HAL", "HAS", "HBAN",
+    "HCA", "HD", "HES", "HIG", "HII", "HLT", "HOLX", "HON", "HPE", "HPQ",
+    "HRL", "HSIC", "HST", "HSY", "HUBB", "HUM", "HWM", "IBM", "ICE", "IDXX",
+    "IEX", "IFF", "ILMN", "INCY", "INDV", "INTC", "INTU", "INVH", "IP", "IPG",
+    "IQV", "IR", "IRM", "ISRG", "IT", "ITW", "IVZ", "J", "JBHT", "JBL",
+    "JCI", "JKHY", "JNJ", "JNPR", "JPM", "K", "KDP", "KEY", "KEYS", "KHC",
+    "KIM", "KLAC", "KMB", "KMI", "KMX", "KO", "KR", "KVUE", "L", "LDOS",
+    "LEN", "LH", "LHX", "LIN", "LKQ", "LLY", "LMT", "LNT", "LOW", "LRCX",
+    "LULU", "LUV", "LVS", "LW", "LYB", "LYV", "M", "MA", "MAA", "MAR",
+    "MAS", "MCD", "MCHP", "MCK", "MCO", "MDLZ", "MDT", "MET", "META", "MGM",
+    "MHK", "MIK", "MKC", "MKTX", "MLM", "MMC", "MMM", "MNST", "MO", "MOH",
+    "MOS", "MPC", "MPWR", "MRK", "MRNA", "MS", "MSI", "MSFT", "MTB", "MTD",
+    "MU", "NCLH", "NDAQ", "NDSN", "NEE", "NEM", "NFLX", "NI", "NKE", "NIO",
+    "NOC", "NOW", "NRG", "NSC", "NTAP", "NTRS", "NUE", "NVDA", "NVR", "NWS",
+    "NWSA", "NXPI", "O", "ODFL", "OKE", "OMC", "ON", "ORLY", "ORCL", "OTIS",
+    "OXY", "PANW", "PARA", "PAYX", "PAYC", "PCAR", "PCG", "PCLN", "PDCO", "PEG",
+    "PEP", "PFE", "PFG", "PG", "PGR", "PH", "PHM", "PKG", "PLD", "PLTR",
+    "PM", "PNC", "PNR", "PNW", "PODD", "POOL", "PPG", "PPL", "PRU", "PSA",
+    "PTC", "PWR", "PX", "PXD", "QCOM", "QRVO", "RCL", "RE", "REG", "REGN",
+    "RF", "RHI", "RMD", "ROK", "ROL", "ROP", "ROST", "RSG", "RTX", "RVTY",
+    "SBAC", "SBUX", "SCHW", "SHW", "SJM", "SNA", "SNPS", "SO", "SPG", "SPGI",
+    "SPLK", "SRE", "STE", "STT", "STX", "STZ", "SUN", "SWK", "SWKS", "SYF",
+    "SYK", "SYY", "T", "TAP", "TDG", "TDY", "TECH", "TEL", "TER", "TFC",
+    "TFX", "TGT", "TI", "TJX", "TMO", "TMUS", "TROW", "TRV", "TRGP", "TSCO",
+    "TSG", "TSLA", "TSN", "TT", "TTWO", "TXN", "TXT", "TYL", "UAL", "UDR",
+    "UHS", "ULTA", "UNH", "UNP", "UPS", "URI", "USB", "V", "VALE", "VFC",
+    "VLO", "VLTO", "VMC", "VOD", "VRSK", "VRSN", "VRTX", "VTR", "VTRS", "VZ",
+    "WAB", "WAT", "WBA", "WBD", "WEC", "WFC", "WHR", "WM", "WMB", "WMT",
+    "WRB", "WST", "WTW", "WY", "WYNN", "XCEL", "XOM", "XRAY", "XYL", "YUM",
+    "ZBH", "ZBRA", "ZION", "ZTS"
+]
+
+nasdaq100 = [
+    "AAPL", "ABNB", "ADBE", "ADI", "ADSK", "ADP", "AEP", "ALAB", "ALGN", "ALNY",
+    "AMAT", "AMD", "AMGN", "AMZN", "ANSS", "AON", "APA", "APP", "APLO", "ARM",
+    "ASML", "AVGO", "AXON", "BIP", "BKR", "BKNG", "BMRN", "CDNS", "CEG", "CHKP",
+    "CINT", "CPRT", "CRWD", "CRWV", "CSCO", "CSGP", "CSX", "CTAS", "DASH", "DDOG",
+    "DXCM", "EA", "EXC", "FANG", "FAST", "FTNT", "GEHC", "GILD", "GOOG", "GOOGL",
+    "HON", "IDXX", "ILMN", "INTC", "INTU", "ISRG", "KDP", "KLAC", "KHC", "LRCX",
+    "LIN", "LULU", "MAL", "MAR", "MCHP", "MDLZ", "MELI", "META", "MNST", "MSFT",
+    "MU", "NBIS", "NFLX", "NVDA", "NXPI", "ODFL", "ORLY", "PANW", "PAYX", "PCAR",
+    "PDD", "PEP", "PLTR", "POOL", "QCOM", "REGN", "RKLB", "ROST", "ROPR", "SBUX",
+    "SHOP", "SNPS", "TEAM", "TER", "TMUS", "TSLA", "TXN", "TTWO", "VRTX", "WBA",
+    "WBD", "WDC", "WDAY", "WMT"
+]
+
 def symbolsToDataframe(symbols: list[str]) -> pd.DataFrame:
     normalizedSymbols = normalizeSymbols(symbols)
     bareSymbols = [s.replace(".NS", "").replace(".BO", "") for s in normalizedSymbols]
@@ -524,10 +598,28 @@ def getUniverseDataframe(universeName: str = "nifty50") -> pd.DataFrame:
         return symbolsToDataframe(symbolsNifty200)
     if normalizedUniverse == "banknifty":
         return symbolsToDataframe(symbolsBankNifty)
-    if normalizedUniverse == "allstocks":
-        return symbolsToDataframe(symbolsAllUniverse)
-    raise ValueError("universe must be one of: nifty50, nifty200, banknifty, allstocks")
+    if normalizedUniverse == "allstocksIndia":
+        return symbolsToDataframe(symbolsAllUniverseIndia)
+    # if normalizedUniverse == "dow":
+    #     return pd.DataFrame(dow)
+    # if normalizedUniverse == "sp500":
+    #     return symbolsToDataframe(sp500)
+    # if normalizedUniverse == "nasdaq100":
+    #     return symbolsToDataframe(nasdaq100)
+    raise ValueError("universe must be one of: nifty50, nifty200, banknifty, allstocksIndia")
 
 def loadDefaultSymbols(universeName: str = "nifty50") -> list[str]:
-    universeDf = getUniverseDataframe(universeName=universeName)
-    return universeDf["yahooSymbol"].tolist()
+    if universeName == "nifty50":
+        return getUniverseDataframe(universeName=universeName)["yahooSymbol"].tolist()
+    if universeName == "nifty200":
+        return getUniverseDataframe(universeName=universeName)["yahooSymbol"].tolist()
+    if universeName == "banknifty":
+        return getUniverseDataframe(universeName=universeName)["yahooSymbol"].tolist()
+    if universeName == "allstocksIndia":
+        return getUniverseDataframe(universeName=universeName)["yahooSymbol"].tolist()
+    if universeName == "dow":
+        return dow
+    if universeName == "sp500":
+        return sp500
+    if universeName == "nasdaq100":
+        return nasdaq100
