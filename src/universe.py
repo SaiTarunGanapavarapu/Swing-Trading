@@ -598,7 +598,7 @@ def getUniverseDataframe(universeName: str = "nifty50") -> pd.DataFrame:
         return symbolsToDataframe(symbolsNifty200)
     if normalizedUniverse == "banknifty":
         return symbolsToDataframe(symbolsBankNifty)
-    if normalizedUniverse == "allstocksIndia":
+    if normalizedUniverse == "allstocksindia":
         return symbolsToDataframe(symbolsAllUniverseIndia)
     # if normalizedUniverse == "dow":
     #     return pd.DataFrame(dow)
@@ -606,17 +606,21 @@ def getUniverseDataframe(universeName: str = "nifty50") -> pd.DataFrame:
     #     return symbolsToDataframe(sp500)
     # if normalizedUniverse == "nasdaq100":
     #     return symbolsToDataframe(nasdaq100)
-    raise ValueError("universe must be one of: nifty50, nifty200, banknifty, allstocksIndia")
+    raise ValueError("universe must be one of: nifty50, nifty200, banknifty, allstocksindia")
 
 def loadDefaultSymbols(universeName: str = "nifty50") -> list[str]:
     if universeName == "nifty50":
-        return getUniverseDataframe(universeName=universeName)["yahooSymbol"].tolist()
+        universeDf = getUniverseDataframe(universeName=universeName)
+        return universeDf["yahooSymbol"].tolist()
     if universeName == "nifty200":
-        return getUniverseDataframe(universeName=universeName)["yahooSymbol"].tolist()
+        universeDf = getUniverseDataframe(universeName=universeName)
+        return universeDf["yahooSymbol"].tolist()
     if universeName == "banknifty":
-        return getUniverseDataframe(universeName=universeName)["yahooSymbol"].tolist()
-    if universeName == "allstocksIndia":
-        return getUniverseDataframe(universeName=universeName)["yahooSymbol"].tolist()
+        universeDf = getUniverseDataframe(universeName=universeName)
+        return universeDf["yahooSymbol"].tolist()
+    if universeName == "allstocksindia":
+        universeDf = getUniverseDataframe(universeName=universeName)
+        return universeDf["yahooSymbol"].tolist()
     if universeName == "dow":
         return dow
     if universeName == "sp500":
