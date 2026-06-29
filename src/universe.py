@@ -610,6 +610,7 @@ def getUniverseDataframe(universeName: str = "nifty50") -> pd.DataFrame:
 
 def loadDefaultSymbols(universeName: str = "nifty50") -> list[str]:
     if universeName == "nifty50":
+        
         return getUniverseDataframe(universeName=universeName)["yahooSymbol"].tolist()
     if universeName == "nifty200":
         return getUniverseDataframe(universeName=universeName)["yahooSymbol"].tolist()

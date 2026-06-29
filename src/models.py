@@ -1,6 +1,19 @@
 from dataclasses import dataclass
 
-from .config import defaultCacheFile, defaultCacheHours, defaultExportFile
+from .config import (
+    defaultCacheFile,
+    defaultCacheHours,
+    defaultExportFile,
+    defaultBudget,
+    defaultPortfolioFile,
+    defaultDecayLambda,
+    defaultDecayFloor,
+    defaultMaxPositionFrac,
+    defaultMinPositionSize,
+    defaultMaxPerSector,
+    defaultTopBuy,
+    defaultMinBuyScore,
+)
 
 
 @dataclass
@@ -16,3 +29,16 @@ class RunOptions:
     refreshCache: bool = False
     noCache: bool = False
     cacheMode: str = "off"
+
+    # Accumulation mode
+    mode: str = "screen"  # screen | accumulate
+    budget: float = defaultBudget
+    portfolioFile: str = defaultPortfolioFile
+    decayLambda: float = defaultDecayLambda
+    decayFloor: float = defaultDecayFloor
+    maxPositionFrac: float = defaultMaxPositionFrac
+    minPositionSize: float = defaultMinPositionSize
+    maxPerSector: int = defaultMaxPerSector
+    topBuy: int = defaultTopBuy
+    minBuyScore: float = defaultMinBuyScore
+    confirmBuy: bool = False  # if True, record purchases to portfolio
